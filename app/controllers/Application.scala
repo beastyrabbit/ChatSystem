@@ -7,6 +7,8 @@ import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
 import javax.inject.Inject
+import javax.management.MBeanOperationInfo
+
 import play.api.i18n.I18nSupport
 import play.api.i18n.MessagesApi
 
@@ -15,10 +17,12 @@ class Application @Inject()(val messagesApi: MessagesApi) extends Controller wit
     Ok(views.html.login(loginForm))
   }
 
-  val userPost = Action(parse.form(loginForm)) { implicit request =>
+  def loginPost = Action(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
     val newUser = new User(loginData.userName, loginData.password)
-    Redirect(routes.Application.home(newUser.id))
+    println(loginData.userName + " " + loginData.password)
+    //Redirect(routes.Application.home(newUser.id))
+    Ok("Hello" + loginData.userName + " pw: " + loginData.password)
   }
 
   val loginForm = Form(
@@ -28,5 +32,7 @@ class Application @Inject()(val messagesApi: MessagesApi) extends Controller wit
     )(UserData.apply)(UserData.unapply)
   )
 
-  def home(id: String) = play.mvc.Results.TODO
+  def home(id: String) = Action {
+    Ok("Hallo" + id)
+  }
 }
