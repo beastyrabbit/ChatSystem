@@ -9,10 +9,15 @@ import play.api.data.Forms._
 import javax.inject.Inject
 import javax.management.MBeanOperationInfo
 
+import actors._
+import akka.actor.ActorSystem
 import play.api.i18n.I18nSupport
 import play.api.i18n.MessagesApi
 
-class Application @Inject()(val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) extends Controller with I18nSupport {
+
+  val AKKASystemRef = new AKKASystem(system);
+
   def index = Action {
     Ok(views.html.login(loginForm))
   }
@@ -20,9 +25,7 @@ class Application @Inject()(val messagesApi: MessagesApi) extends Controller wit
   def loginPost = Action(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
     val newUser = new User(loginData.userName, loginData.password)
-    println(loginData.userName + " " + loginData.password)
-    //Redirect(routes.Application.home(newUser.id))
-    Ok("Hello" + loginData.userName + " pw: " + loginData.password)
+    Redirect(routes.Application.home(loginData.userName))
   }
 
   val loginForm = Form(
@@ -33,6 +36,7 @@ class Application @Inject()(val messagesApi: MessagesApi) extends Controller wit
   )
 
   def home(id: String) = Action {
+    AKKASystemRef.createUser(id)
     Ok("Hallo" + id)
   }
 }
