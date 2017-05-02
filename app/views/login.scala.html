@@ -1,0 +1,7 @@
+@(userForm: Form[UserData])(implicit messages: Messages)
+
+
+@helper.form(action = routes.Application.userPost()) {
+    @helper.inputText(userForm("Username"))
+    @helper.inputPassword(userForm("Password"))
+}
