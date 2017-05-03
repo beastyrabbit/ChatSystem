@@ -1,5 +1,3 @@
-# Users SCHEMA
-
 # --- !Ups
 
 CREATE TABLE User (
@@ -58,7 +56,6 @@ ALTER TABLE GuiSettings
   ADD CONSTRAINT FKGuiSetting68533 FOREIGN KEY (userid) REFERENCES User (userid);
 ALTER TABLE GuiSettings
   ADD CONSTRAINT FKGuiSetting816374 FOREIGN KEY (lastchat) REFERENCES Chat (chatid);
-
 # --- !Downs
 
 DROP TABLE User;
