@@ -2,14 +2,14 @@ package objects
 
 import java.sql.Timestamp
 
-import slick.driver.H2Driver.api._
+import slick.jdbc.H2Profile.api._
 import slick.lifted.{ForeignKeyQuery, ProvenShape}
 
 /**
   * Created by theer on 05.05.2017.
   */
 
-class User(tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, String)](tag, "USER") {
+class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, String, Timestamp, String)](tag, "USER") {
   def id = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
   def username = column[String]("USERNAME")
@@ -28,7 +28,7 @@ class User(tag: Tag) extends Table[(Int, String, String, String, String, String,
 
   def picture = column[String]("PICTURE")
 
-  def * = (id, username, password, firstname, lastname, email, nickname, lastlogin, picture)
+  def * = (id.?, username, password, firstname, lastname, email, nickname, lastlogin, picture)
 }
 
 
