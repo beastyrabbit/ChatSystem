@@ -4,10 +4,16 @@ package actors
   * Created by theer on 02.05.2017.
   */
 
+import java.sql.Timestamp
+import javax.inject.Inject
+
 import akka.actor._
 import objects.UserRecord
 import slick.jdbc.H2Profile.api._
 import objects._
+import play.api.Play
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -23,11 +29,13 @@ class DatenBankActor extends Actor {
   }
 
   def fillUserData(user: UserRecord): UserRecord = {
-    val db = Database.forURL("ChatDB")
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val time = new Timestamp(300l)
     try {
       val user = TableQuery[User]
       val setup = DBIO.seq(
-        user += (1, "", "InCode", "", "", "", "", 0, "")
+        user += (3, "", "InCode", "", "", "", "", time, "")
       )
       val setupFuture = db.run(setup)
     } finally db.close
