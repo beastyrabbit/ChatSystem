@@ -1,7 +1,7 @@
 package controllers
 
 import models.UserData
-import objects.User
+import objects.UserRecord
 import play.api._
 import play.api.mvc._
 import play.api.data._
@@ -24,8 +24,9 @@ class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) e
 
   def loginPost = Action(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
-    val newUser = new User(loginData.userName, loginData.password)
-    Redirect(routes.Application.home(loginData.userName))
+    val newUser = new UserRecord(username = loginData.userName, password = loginData.password)
+    AKKASystemRef.createUser(newUser)
+    Ok("Hello! " + newUser.username)
   }
 
   val loginForm = Form(
@@ -34,9 +35,4 @@ class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) e
       "Password" -> nonEmptyText
     )(UserData.apply)(UserData.unapply)
   )
-
-  def home(id: String) = Action {
-    AKKASystemRef.createUser(id)
-    Ok("Hallo" + id)
-  }
 }
