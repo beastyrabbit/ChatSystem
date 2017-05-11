@@ -11,8 +11,11 @@ import javax.management.MBeanOperationInfo
 
 import actors._
 import akka.actor.ActorSystem
+import exceptions.WrongCredentials
 import play.api.i18n.I18nSupport
 import play.api.i18n.MessagesApi
+
+import scala.util.{Failure, Success}
 
 class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) extends Controller with I18nSupport {
 
@@ -25,8 +28,17 @@ class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) e
   def loginPost = Action(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
     val newUser = new UserRecord(username = loginData.userName, password = loginData.password)
-    AKKASystemRef.createUser(newUser)
-    Ok("Hello! " + newUser.username)
+    if (AKKASystemRef checkCredentialsToAKKA (newUser)) {
+      AKKASystemRef createUserToAKKA newUser
+      Ok(views.html.chat())
+    } else {
+      Ok("Bad Login")
+    }
+
+  }
+
+  def errorOutput(message: String) = Action {
+    Ok(message)
   }
 
   val loginForm = Form(
@@ -37,7 +49,7 @@ class Application @Inject()(val messagesApi: MessagesApi, system: ActorSystem) e
   )
 
   def templogin() = Action {
-    AKKASystemRef.createUser(new UserRecord())
+    AKKASystemRef.createUserToAKKA(new UserRecord())
     Ok("Durch")
   }
 }

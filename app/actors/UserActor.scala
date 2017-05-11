@@ -1,13 +1,14 @@
 package actors
 
 import akka.actor._
+import objects.UserRecord
 
 /**
   * Created by theer on 02.05.2017.
   */
 
 
-class UserActor(userName: String) extends Actor {
+class UserActor(user: UserRecord) extends Actor {
 
   import UserActor._
 
@@ -15,13 +16,13 @@ class UserActor(userName: String) extends Actor {
     case openWebsocket() =>
       println("Hier bin ich")
     case howareyouChild() =>
-      println("User: " + userName + " Props: " + this.toString)
+      println("User: " + user.username + " Props: " + this.toString)
   }
 
 }
 
 object UserActor {
-  def props(userName: String): Props = Props(new UserActor(userName))
+  def props(user: UserRecord): Props = Props(new UserActor(user))
 
   case class openWebsocket()
 

@@ -6,8 +6,11 @@ package actors
 
 import java.sql.Timestamp
 import javax.inject.Inject
+import scala.concurrent.duration._
+import actors.UserManagerActor.createNewUser
 import scala.collection.breakOut
 import akka.actor._
+import exceptions.WrongCredentials
 import objects.UserRecord
 import slick.jdbc.H2Profile.api._
 import objects._
@@ -18,52 +21,68 @@ import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlStreamingAction
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 class DatenBankActor extends Actor {
 
   import DatenBankActor._
 
+
   def receive = {
-    case fillUserData(user: UserRecord, sendto: ActorRef) =>
-      getUserData(user)
-    case TEMPPPER2() =>
+    case sendUserData(user: UserRecord, sendto: ActorRef) =>
+      sendUserDataImp(user, sendto)
+    case checkCredentials(user: UserRecord) =>
+      sender() ! checkCredentialsImp(user: UserRecord)
+    case TEMPPPER3() =>
       println("TEMPPPER")
   }
 
-  def fillUserRecord(x: Seq[(Option[Int], String, String, String, String, String, String, Timestamp, String)]): UserRecord = {
-    val names = Seq("userid", "username", "password", "firstname", "lastname", "email", "nickname", "lastlogin", "piture")
-    val userlist = names zip x toMap
 
-    new UserRecord(userid = userlist.get("userid"))
-
+  def checkCredentialsImp(olduser: UserRecord): Boolean = {
+    val readoutuserFuture = getUserDataFuture(olduser)
+    val sql = Await.result(readoutuserFuture, 10 second)
+    val userTuple = sql(0)
+    val user = new UserRecord(userTuple._1.get, userTuple._2, userTuple._3, userTuple._4, userTuple._5, userTuple._6, userTuple._7, userTuple._8, userTuple._9)
+    if (user.password == olduser.password) {
+      true
+    } else {
+      false
+    }
   }
 
 
-  def getUserData(user: UserRecord): UserRecord = {
-    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
-    val db = dbConfig.db
-    val time = new Timestamp(300l)
-    val userDB = TableQuery[User]
-    val userquery = userDB.filter(_.username === user.username)
-    val readoutuserFuture = db.run(userquery.result)
+  def sendUserDataImp(olduser: UserRecord, sendto: ActorRef) = {
+    val readoutuserFuture = getUserDataFuture(olduser)
     readoutuserFuture onComplete {
-      case Success(x) => fillUserRecord(x)
-      case Failure(ex) => println(ex)
+      case Success(sql) => {
+        val userTuple = sql(0)
+        val user = new UserRecord(userTuple._1.get, userTuple._2, userTuple._3, userTuple._4, userTuple._5, userTuple._6, userTuple._7, userTuple._8, userTuple._9)
+        println(user)
+        sendto ! createNewUser(user)
+      }
+      case Failure(ex) => throw ex
 
     }
+  }
 
-    return new UserRecord()
+  private def getUserDataFuture(olduser: UserRecord) = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val userDB = TableQuery[User]
+    val userquery = userDB.filter(_.username === olduser.username)
+    val readoutuserFuture = db.run(userquery.result)
+    readoutuserFuture
   }
 }
-
 
 object DatenBankActor {
   def props(): Props = Props(new DatenBankActor())
 
-  case class fillUserData(user: UserRecord, sendto: ActorRef)
+  case class sendUserData(user: UserRecord, sendto: ActorRef)
 
-  case class TEMPPPER2()
+  case class checkCredentials(user: UserRecord)
 
-}    
+  case class TEMPPPER3()
+
+}

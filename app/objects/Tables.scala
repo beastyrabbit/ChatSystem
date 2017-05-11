@@ -9,7 +9,7 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape}
   * Created by theer on 05.05.2017.
   */
 
-class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, String, Timestamp, String)](tag, "USER") {
+class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])](tag, "USER") {
   def id = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
   def username = column[String]("USERNAME")
@@ -22,11 +22,11 @@ class User(tag: Tag) extends Table[(Option[Int], String, String, String, String,
 
   def email = column[String]("EMAIL")
 
-  def nickname = column[String]("NICKNAME")
+  def nickname = column[Option[String]]("NICKNAME")
 
-  def lastlogin = column[Timestamp]("LASTLOGIN")
+  def lastlogin = column[Option[Timestamp]]("LASTLOGIN")
 
-  def picture = column[String]("PICTURE")
+  def picture = column[Option[String]]("PICTURE")
 
   def * = (id.?, username, password, firstname, lastname, email, nickname, lastlogin, picture)
 }

@@ -1,0 +1,41 @@
+.innerchat {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background-color: lightgrey;
+    width: 400px;
+    height: 100px;
+}
+
+.chatleiste {
+    order: 1;
+    flex: 1;
+}
+
+.chatbox {
+    order: 2;
+    flex: 2;
+}
+
+.rightcombined {
+    order: 3;
+    flex-direction: column;
+    flex: 1;
+}
+
+.optionen {
+    order: 1;
+}
+
+.timeline {
+    order: 2;
+}
+
+div {
+    border: 5px solid #00e302;
+}
+
+.statusbar {
+    width: 100%;
+
+}
