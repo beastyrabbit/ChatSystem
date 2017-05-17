@@ -30,6 +30,7 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
     case howareyouChild() =>
     //println("User: " + user.username + " Props: " + this.toString)
     case msg: JsValue =>
+      println("Message res:" + msg)
       out ! msg
   }
 

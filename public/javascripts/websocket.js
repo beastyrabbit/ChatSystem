@@ -1,28 +1,26 @@
 var wsUri = "ws://localhost:9000/socket";
+var websocket = new WebSocket(wsUri);
 
-
-/!* Slide Members Info *!/
-$('.info-btn').on('click', function () {
-    $("#Messages").toggleClass('col-sm-12 col-sm-9');
-});
-/!* Send Button *!/
-$('#send-button').on('click', function () {
-    textArea = $("#inputArea")
-    json = {
-        "type": "message",
-        "text": (textArea.val().toString())
-    }
-    doSend(json)
-    text.value = ""
-})
 
 $(document).ready(function () {
     initWebSocket();
+    /! * Slide MembersInfo * ! /
+    $('.info-btn').on('click', function () {
+        $("#Messages").toggleClass('col-sm-12 col-sm-9');
+    });
+    /!* Send Button *!/
+    $('#send-button').on('click', function () {
+        let textArea = $("#inputArea")
+        let message = {
+            "type": "message", "text": (textArea.val().toString())
+        }
+        doSend(JSON.stringify(message))
+        textArea.value = ""
+    })
 });
 
 function initWebSocket() {
     console.log("My Websocket")
-    websocket = new WebSocket(wsUri);
     websocket.onopen = function (evt) {
         onOpen(evt)
     };
@@ -43,19 +41,21 @@ function onOpen(evt) {
 }
 
 function onClose(evt) {
+    console.log(evt)
     console.log("DISCONNECTED");
 }
 
 function onMessage(evt) {
     console.log(evt)
-    data = JSON.parse(evt.data)
-    switch (data.type) {
+    let datarecive = JSON.parse(evt.data)
+    console.log(datarecive)
+    switch (datarecive.type) {
         case
         "SetupUser":
-            document.getElementById("username").innerHTML = data.user.username
+            document.getElementById("username").innerHTML = datarecive.user.username
 
     }
-    return false
+    return
 }
 
 function onError(evt) {
