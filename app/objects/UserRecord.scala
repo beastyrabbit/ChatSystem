@@ -2,6 +2,8 @@ package objects
 
 import java.sql.Timestamp
 
+import akka.actor.ActorRef
+
 /**
   * Created by theer on 02.05.2017.
   */
@@ -14,5 +16,6 @@ case class UserRecord(
                        email: String = "",
                        nickname: Option[String] = Option(""),
                        lastlogin: Option[Timestamp] = Option(new Timestamp(0)),
-                       picture: Option[String] = Option("")
+                       picture: Option[String] = Option(""),
+                       out: ActorRef = ActorRef.noSender
                      )

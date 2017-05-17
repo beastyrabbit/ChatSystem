@@ -6,8 +6,12 @@ package actors
 
 import java.sql.Timestamp
 import javax.inject.Inject
+
+import actors.UserActor.getUserRecord
+
 import scala.concurrent.duration._
-import actors.UserManagerActor.createNewUser
+import actors.UserManagerActor.addNewUser
+
 import scala.collection.breakOut
 import akka.actor._
 import exceptions.WrongCredentials
@@ -53,13 +57,12 @@ class DatenBankActor extends Actor {
 
 
   def sendUserDataImp(olduser: UserRecord, sendto: ActorRef) = {
-    val readoutuserFuture = getUserDataFuture(olduser)
-    readoutuserFuture onComplete {
+    val readOutUserDataFuture = getUserDataFuture(olduser)
+    readOutUserDataFuture onComplete {
       case Success(sql) => {
         val userTuple = sql(0)
         val user = new UserRecord(userTuple._1.get, userTuple._2, userTuple._3, userTuple._4, userTuple._5, userTuple._6, userTuple._7, userTuple._8, userTuple._9)
-        println(user)
-        sendto ! createNewUser(user)
+        sendto ! getUserRecord(user)
       }
       case Failure(ex) => throw ex
 

@@ -1,12 +1,27 @@
-var wsUri = "ws://echo.websocket.org/";
-var output;
+var wsUri = "ws://localhost:9000/socket";
 
-function init() {
-    output = document.getElementById("output");
-    testWebSocket();
-}
 
-function testWebSocket() {
+/!* Slide Members Info *!/
+$('.info-btn').on('click', function () {
+    $("#Messages").toggleClass('col-sm-12 col-sm-9');
+});
+/!* Send Button *!/
+$('#send-button').on('click', function () {
+    textArea = $("#inputArea")
+    json = {
+        "type": "message",
+        "text": (textArea.val().toString())
+    }
+    doSend(json)
+    text.value = ""
+})
+
+$(document).ready(function () {
+    initWebSocket();
+});
+
+function initWebSocket() {
+    console.log("My Websocket")
     websocket = new WebSocket(wsUri);
     websocket.onopen = function (evt) {
         onOpen(evt)
@@ -23,33 +38,33 @@ function testWebSocket() {
 }
 
 function onOpen(evt) {
-    writeToScreen("CONNECTED");
+    console.log("CONNECTED");
     doSend("WebSocket rocks");
 }
 
 function onClose(evt) {
-    writeToScreen("DISCONNECTED");
+    console.log("DISCONNECTED");
 }
 
 function onMessage(evt) {
-    writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
-    websocket.close();
+    console.log(evt)
+    data = JSON.parse(evt.data)
+    switch (data.type) {
+        case
+        "SetupUser":
+            document.getElementById("username").innerHTML = data.user.username
+
+    }
+    return false
 }
 
 function onError(evt) {
-    writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+    console.log(evt)
+    // console('<span style="color: red;">ERROR:</span> ' + evt.data);
 }
 
 function doSend(message) {
-    writeToScreen("SENT: " + message);
+    console.log(message)
     websocket.send(message);
 }
 
-function writeToScreen(message) {
-    var pre = document.createElement("p");
-    pre.style.wordWrap = "break-word";
-    pre.innerHTML = message;
-    output.appendChild(pre);
-}
-
-window.addEventListener("load", init, false);

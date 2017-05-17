@@ -10,3 +10,5 @@ GET         /                    controllers.Application.index
 GET         /assets/*file        controllers.Assets.at(path="/public", file)
 POST        /loginPost           controllers.Application.loginPost
 GET         /templogin           controllers.Application.templogin
+GET         /chat                controllers.Application.chat
+GET         /socket              controllers.Application.socket

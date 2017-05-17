@@ -1,8 +1,8 @@
 @(loginForm: Form[UserData])(implicit messages: Messages)
 
 
-@helper.form(action = routes.Application.loginPost()) {
-    @helper.inputText(loginForm("Username"))
-    @helper.inputPassword(loginForm("Password"))
-    <button type="submit">Login</button>
-}
+    @helper.form(action = routes.Application.loginPost()) {
+        @helper.inputText(loginForm("Username"))
+        @helper.inputText(loginForm("Password"))
+        <button type="submit">Login</button>
+    }

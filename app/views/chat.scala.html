@@ -1,35 +1,328 @@
 @()
-<script src="../../public/javascripts/websocket.js"></script>
-<html>
-    <head>
+<!--3rd Party Fonts & Icons-->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-        <title>Das ist der Chat</title>
-        <link rel="stylesheet" href="chat.css">
-    </head>
+<script src="@routes.Assets.at("javascripts/websocket.js")"></script>
+<link rel="stylesheet" href="@routes.Assets.at("stylesheets/chat.css")">
 
-    <body>
-        <div class="chat">
-            <div class="statusbar">
-                <h2>statusbar</h2>
+<div class="container fill">
+    <div class="row chat-wrap">
 
-            </div>
-            <div class="innerchat chatleiste">
-                <h2>chatleiste</h2>
+            <!-- Contacts & Conversations -->
+        <div class="col-sm-3 panel-wrap">
 
-            </div>
-            <div class="innerchat chatbox">
-                <h2>chatbox</h2>
-            </div>
-            <div class="innerchat rightcombined">
-                <div class="innerchat rightcombined optionen">
-                    <h2>optionen</h2>
+                <!-- Overlay Menu / Contacts -->
+            <div class="col-sm-12 section-wrap collapse" id="Contacts">
 
+                    <!--Header-->
+                <div class="row header-wrap">
+                    <div class="chat-header col-sm-12">
+                        <h4>Select a Contact</h4>
+                        <div class="header-button">
+                            <a class="btn pull-right" href="#Contacts" data-toggle="collapse">
+                                <i class="fa fa-close"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="innerchat rightcombined timeline">
-                    <h2>timeline</h2>
+
+                    <!--Contacts-->
+                <div class="row content-wrap">
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
+                    <div class="contact btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                        </div>
+                    </div>
                 </div>
 
             </div>
+
+                <!--Left Menu / Conversation List-->
+            <div class="col-sm-12 section-wrap">
+
+                    <!--Header-->
+                <div class="row header-wrap">
+                    <div class="chat-header col-sm-12">
+                        <h4 id="username">Andres Elizondo</h4>
+                        <div class="header-button">
+                            <a class="btn pull-right" href="#Contacts" data-toggle="collapse">
+                                <i class="fa fa-pencil-square-o fa-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                    <!--Conversations-->
+                <div class="row content-wrap">
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading" id="contactName">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                    <div class="conversation btn">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-right time">Last seen 12:10am</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-    </body>
-</html>
+
+            <!-- Messages & Info -->
+        <div class="col-sm-9 panel-wrap">
+
+                <!--Main Content / Message List-->
+            <div class="col-sm-9 section-wrap" id="Messages">
+
+                    <!--Header-->
+                <div class="row header-wrap">
+                    <div class="chat-header col-sm-12">
+                        <h4>Conversation Title</h4>
+                        <div class="header-button">
+                            <a class="btn pull-right info-btn">
+                                <i class="fa fa-info-circle fa-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                    <!--Messages-->
+                <div class="row content-wrap messages">
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                    <div class="msg">
+                        <div class="media-body">
+                            <small class="pull-right time"><i class="fa fa-clock-o"></i> 12:10am</small>
+
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="col-sm-11">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eu pulvinar magna. Phasellus semper scelerisque purus, et semper nisl lacinia sit amet. Praesent venenatis turpis vitae purus semper, eget sagittis velit venenatis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos...</small>
+                        </div>
+                    </div>
+                </div>
+
+                    <!--Message box & Send Button-->
+                <div class="row send-wrap">
+                    <div class="send-message">
+                        <div class="message-text">
+                            <textarea id="inputArea" class="no-resize-bar form-control" rows="2" placeholder="Write a message..."></textarea>
+                        </div>
+                        <div class="send-button" >
+                            <a class="btn" id="send-button">Send <i class="fa fa-send"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+                <!--Sliding Menu / Conversation Members-->
+            <div class="col-sm-3 section-wrap" id="Members">
+
+                    <!--Header-->
+                <div class="row header-wrap">
+                    <div class="chat-header col-sm-12">
+                        <h4>Conversation Info</h4>
+                        <div class="header-button">
+                            <a class="btn pull-right info-btn">
+                                <i class="fa fa-close"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                    <!--Members-->
+                <div class="row content-wrap">
+                    <div class="contact">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-left time"><i>Owner</i></small>
+                        </div>
+                    </div>
+                    <div class="contact">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-left time"><i>Invited</i></small>
+                        </div>
+                    </div>
+                    <div class="contact">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-left time"><i>Owner</i></small>
+                        </div>
+                    </div>
+                    <div class="contact">
+                        <div class="media-body">
+                            <h5 class="media-heading">Walter White</h5>
+                            <small class="pull-left time"><i>Invited</i></small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

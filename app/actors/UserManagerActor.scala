@@ -11,14 +11,11 @@ class UserManagerActor extends Actor {
 
   import UserManagerActor._
 
-  override def receive: Receive = {
-    case createNewUser(user: UserRecord) =>
-      spawnUserActor(user)
-  }
+  var UserRefList = scala.collection.mutable.Map[Int, UserRecord]()
 
-  def spawnUserActor(user: UserRecord) = {
-    val child = context.actorOf(UserActor.props(user), user.userid.toString)
-    context.child(user.userid.toString).get ! howareyouChild()
+  override def receive: Receive = {
+    case addNewUser(user: UserRecord) =>
+      UserRefList += (user.userid -> user)
   }
 
 
@@ -28,7 +25,7 @@ class UserManagerActor extends Actor {
 object UserManagerActor {
   def props = Props[UserManagerActor]
 
-  case class createNewUser(user: UserRecord)
+  case class addNewUser(user: UserRecord)
 
 }
 

@@ -4,7 +4,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import javax.inject._
 
 import akka.pattern.ask
-import actors.UserManagerActor.createNewUser
+import actors.UserManagerActor.addNewUser
 
 import scala.concurrent.duration._
 import akka.actor._
