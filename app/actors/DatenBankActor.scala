@@ -17,7 +17,8 @@ import akka.actor._
 import exceptions.WrongCredentials
 import objects.UserRecord
 import slick.jdbc.H2Profile.api._
-import objects._
+import objects.Tables
+import org.h2.engine.User
 import play.api.Play
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.Effect
@@ -31,15 +32,19 @@ import scala.util.{Failure, Success}
 class DatenBankActor extends Actor {
 
   import DatenBankActor._
-
+  val tables = new Tables
 
   def receive = {
     case sendUserData(user: UserRecord, sendto: ActorRef) =>
       sendUserDataImp(user, sendto)
     case checkCredentials(user: UserRecord) =>
       sender() ! checkCredentialsImp(user: UserRecord)
-    case TEMPPPER3() =>
+    case saveMessage(sender,reciver,msg) =>
       println("TEMPPPER")
+    case getFriends(user, sendto) =>
+      println("test")
+    case addFriend(user, newFriend) =>
+      println("test")
   }
 
 
@@ -72,11 +77,15 @@ class DatenBankActor extends Actor {
   private def getUserDataFuture(olduser: UserRecord) = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
-    val userDB = TableQuery[User]
+    val userDB = tables.userQuery
     val userquery = userDB.filter(_.username === olduser.username)
     val readoutuserFuture = db.run(userquery.result)
     readoutuserFuture
   }
+
+
+
+
 }
 
 object DatenBankActor {
@@ -86,6 +95,8 @@ object DatenBankActor {
 
   case class checkCredentials(user: UserRecord)
 
-  case class TEMPPPER3()
+  case class addFriend(user: UserRecord, newFriend: ActorRef)
 
+  case class getFriends(user: UserRecord, sendto: ActorRef)
+  case class saveMessage(sender: UserRecord, reciver: UserRecord, msg: String)
 }

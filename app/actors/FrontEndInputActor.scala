@@ -20,6 +20,7 @@ class FrontEndInputActor extends Actor {
     val msgType = (msg \ "type").get
     msgType match {
       case JsString("message") => messagepros(msg)
+      case JsString("") => ???
       case _ => println("Das kenn ich nciht " + msg)
     }
   }
