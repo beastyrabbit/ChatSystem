@@ -17,7 +17,6 @@ class Tables {
   val guiSettingsQuery = TableQuery[GuiSettings]
 
 
-
   class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])](tag, "USER") {
     def id = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
@@ -95,6 +94,19 @@ class Tables {
 
     def * = (requestfrom, requestto)
   }
+
+  class Friends(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDS") {
+    def userid = column[Int]("userid")
+
+    def friendid = column[Int]("friendid")
+
+    def Userfrom = foreignKey("FKFriends855472", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+
+    def Userto = foreignKey("FKFriends880936", friendid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+
+    def * = (userid, friendid)
+  }
+
 
   class GuiSettings(tag: Tag) extends Table[(Int, Boolean, Boolean, Int)](tag, "GUISETTINGS") {
     def userid = column[Int]("USERID")

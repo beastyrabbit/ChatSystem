@@ -1,6 +1,5 @@
 package actors
 
-import actors.UserActor.howareyouChild
 import akka.actor._
 import objects.UserRecord
 
