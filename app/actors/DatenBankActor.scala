@@ -16,6 +16,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
+import actors.UserActor.{ChatRooms, Chat}
 
 class DatenBankActor extends Actor {
 
@@ -25,8 +26,8 @@ class DatenBankActor extends Actor {
 
 
   def receive = {
-    case sendUserData(user: UserRecord, sendto: ActorRef) =>
-      sendUserDataImp(user, sendto)
+    case sendUserData(user: UserRecord) =>
+      sendUserDataImp(user, sender())
     case checkCredentials(user: UserRecord) =>
       sender() ! checkCredentialsImp(user: UserRecord)
     case saveMessage(sender, reciver, msg) =>
@@ -48,7 +49,8 @@ class DatenBankActor extends Actor {
     val readoutChatFuture = db.run(chatquery.result)
     readoutChatFuture onComplete {
       case Success(sql: Seq[(Option[Int], Int, String)]) => {
-        sendto ! setupUserChats(sql)
+        val chatrooms = new ChatRooms(sql.map(elem => new Chat(elem._1.get, elem._2, elem._3)))
+        sendto ! setupUserChats(chatrooms)
       }
       case Failure(ex) => throw ex
 
@@ -75,7 +77,7 @@ class DatenBankActor extends Actor {
       case Success(sql) => {
         val userTuple = sql(0)
         val user = new UserRecord(userTuple._1.get, userTuple._2, userTuple._3, userTuple._4, userTuple._5, userTuple._6, userTuple._7, userTuple._8, userTuple._9)
-        sendto ! setupUserRecord(user)
+        sendto ! user
       }
       case Failure(ex) => throw ex
 
@@ -100,7 +102,7 @@ object DatenBankActor {
 
   case class getChats(user: UserRecord, sendto: ActorRef)
 
-  case class sendUserData(user: UserRecord, sendto: ActorRef)
+  case class sendUserData(user: UserRecord)
 
   case class checkCredentials(user: UserRecord)
 

@@ -45,14 +45,20 @@ function onClose(evt) {
     console.log("DISCONNECTED");
 }
 
+function setupChatRooms(datarecive) {
+
+}
 function onMessage(evt) {
     console.log(evt)
     let datarecive = JSON.parse(evt.data)
     console.log(datarecive)
-    switch (datarecive.type) {
+    switch (datarecive.msgType) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
+        case
+                "SetupChatRooms":
+            setupChatRooms(datarecive)
 
     }
     return

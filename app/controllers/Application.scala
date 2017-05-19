@@ -62,9 +62,4 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       "Password" -> nonEmptyText
     )(UserData.apply)(UserData.unapply)
   )
-
-  def templogin() = Action {
-    AKKASystemRef.createUserToAKKA(new UserRecord())
-    Ok("Durch")
-  }
 }

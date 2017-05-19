@@ -19,18 +19,20 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
+import akka.actor.{ActorRef, ActorSystem}
+import akka.serialization._
+import com.typesafe.config.ConfigFactory
+
 /**
   * Created by theer on 02.05.2017.
   */
 @Singleton
 class AKKASystem(system: ActorSystem) {
+
   val userManagerActor = system.actorOf(UserManagerActor.props, "UserManagerActor")
   val dataBaseActor = system.actorOf(DatenBankActor.props, "DatenbankActor")
   implicit val timeout: Timeout = 5.seconds
 
-  def createUserToAKKA(user: UserRecord) = {
-    dataBaseActor ! sendUserData(user, userManagerActor)
-  }
 
   def checkCredentialsToAKKA(user: UserRecord): Boolean = {
     val future = dataBaseActor ? checkCredentials(user)
