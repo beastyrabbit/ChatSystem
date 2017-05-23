@@ -1,8 +1,9 @@
 var wsUri = "ws://localhost:9000/socket";
-var websocket = new WebSocket(wsUri);
+var websocket
 
 
 $(document).ready(function () {
+    websocket = new WebSocket(wsUri);
     initWebSocket();
     /! * Slide MembersInfo * ! /
     $('.info-btn').on('click', function () {
@@ -14,7 +15,7 @@ $(document).ready(function () {
         let message = {
             "type": "message", "text": (textArea.val().toString())
         }
-        doSend(JSON.stringify(message))
+        doSend(message)
         textArea.value = ""
     })
 });
@@ -36,8 +37,8 @@ function initWebSocket() {
 }
 
 function onOpen(evt) {
+    console.log(evt)
     console.log("CONNECTED");
-    doSend("WebSocket rocks");
 }
 
 function onClose(evt) {
@@ -45,22 +46,28 @@ function onClose(evt) {
     console.log("DISCONNECTED");
 }
 
-function setupChatRooms(datarecive) {
+function setupChatRooms(chatRoomArray) {
+    console.log(datarecive)
+    forEach(chatRoom in chatRoomArray)
+    {
+
+    }
 
 }
 function onMessage(evt) {
-    console.log(evt)
     let datarecive = JSON.parse(evt.data)
-    console.log(datarecive)
+    console.log("Websocket got message: " + evt.data)
     switch (datarecive.msgType) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
         case
-                "SetupChatRooms":
+        "SetupChatRooms":
             setupChatRooms(datarecive)
 
+
     }
+    console.log(datarecive.msgType)
     return
 }
 
@@ -70,7 +77,7 @@ function onError(evt) {
 }
 
 function doSend(message) {
-    console.log(message)
+    message = JSON.stringify(message)
+    console.log("Sending Message: " + message)
     websocket.send(message);
 }
-

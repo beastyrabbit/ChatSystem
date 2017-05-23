@@ -4,7 +4,7 @@ package actors
   * Created by theer on 02.05.2017.
   */
 
-import actors.UserActor.{setupUserChats, setupUserRecord}
+import actors.UserActor.{setupUserChats}
 import akka.actor._
 import objects.{Tables, UserRecord}
 import play.api.db.slick.DatabaseConfigProvider
@@ -37,7 +37,6 @@ class DatenBankActor extends Actor {
     case addFriend(user, newFriend) =>
       println("test")
     case getChats(user, sendto) =>
-      Logger.info(user.toString)
       sendChatsImp(user, sendto)
   }
 

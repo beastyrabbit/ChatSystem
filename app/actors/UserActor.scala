@@ -18,7 +18,8 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.pattern.ask
 
-import scala.concurrent.Future
+import scala.collection.mutable
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -30,69 +31,86 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends Actor {
 
   var USER = preUser
+  var listWebsocket: scala.collection.mutable.Set[ActorRef] = mutable.Set.empty[ActorRef]
 
   import UserActor._
 
+  override def postStop(): Unit = {
+    system.userManagerActor ! removeUser(USER, context.self)
+  }
+
   override def preStart(): Unit = {
     super.preStart()
-    println("New User is here")
+    Logger.debug("User " + preUser.username + " on Setup")
+    listWebsocket += out
     implicit val timeout = Timeout(5 seconds)
     val UserFuture = system.dataBaseActor ? sendUserData(preUser)
     UserFuture onComplete {
       case Success(user: UserRecord) => {
         USER = user;
-        system.userManagerActor ! addNewUser(user)
+        sendSetupOutUser(USER)
         system.dataBaseActor ! getChats(user, context.self)
+        system.userManagerActor ! addNewUser(user, context.self, out)
       }
       case Failure(ex) => throw ex
     }
+    Logger.debug("New UserActor is started: " + context.self)
   }
 
 
+  def doSend(msg: JsValue): Unit = {
+    Logger.debug("Sending msg to " + USER.username + " WebSocket : " + msg)
+    listWebsocket.foreach(outref => {
+      println(outref)
+      outref ! msg
+    })
+  }
+
   def receive = {
-    case setupUserRecord(inputUser: UserRecord) =>
-      println("recived UserData: " + inputUser)
-      USER = inputUser
-      sendSetupOutUser(inputUser)
+    case addWebsocket(newOut: ActorRef) =>
+      listWebsocket += newOut
+    case sendWebsocketList(ref: ActorRef) =>
+      listWebsocket.foreach(outref => ref ! addWebsocket(outref))
     case setupUserChats(chatrooms: ChatRooms) =>
       sendSetupOutChats(chatrooms)
     case msg: JsValue =>
-      println("Message res:" + msg)
-      out ! msg
+      Logger.debug(sender() + " recived Message res:" + msg)
+      doSend(msg)
   }
 
   def sendSetupOutChats(chatrooms: ChatRooms): Unit = {
     implicit val formatchat = Json.format[Chat]
     implicit val format = Json.format[ChatRooms]
-    val json: JsValue = Json.toJson(chatrooms.copy(msgType = "SetupChatrooms"))
-    Logger.info(json.toString())
-    //out ! json
+    val json: JsValue = Json.toJson(chatrooms.copy(msgType = "SetupChatRooms"))
+    doSend(json)
   }
 
 
   def sendSetupOutUser(user: UserRecord) = {
     val jsonto = Json.toJson(user)
-    Logger.info(jsonto.toString())
     val json = Json.obj(
       "msgType" -> "SetupUser",
       "user" -> Json.obj(
         "username" -> user.username
       )
     )
-    out ! json
+    doSend(json)
   }
+
 
 }
 
 object UserActor {
+
+  case class sendWebsocketList(ref: ActorRef)
+
+  case class addWebsocket(newOut: ActorRef)
 
   def props(preUser: UserRecord, out: ActorRef, system: AKKASystem) = Props(new UserActor(preUser, out, system))
 
   case class openWebsocket()
 
   case class setupUserChats(chatrooms: ChatRooms)
-
-  case class setupUserRecord(user: UserRecord)
 
   case class ChatRooms(chatSeq: Seq[Chat], msgType: String = "")
 
