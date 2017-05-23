@@ -7,7 +7,7 @@ import actors.UserManagerActor.addNewUser
 import akka.actor._
 import objects.UserRecord
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.{JsObject, JsValue, Json, Writes}
 import actors.UserManagerActor._
 import akka.util.Timeout
 import org.joda.time.DateTime
@@ -61,7 +61,6 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
   def doSend(msg: JsValue): Unit = {
     Logger.debug("Sending msg to " + USER.username + " WebSocket : " + msg)
     listWebsocket.foreach(outref => {
-      println(outref)
       outref ! msg
     })
   }
@@ -75,7 +74,7 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
       sendSetupOutChats(chatrooms)
     case msg: JsValue =>
       Logger.debug(sender() + " recived Message res:" + msg)
-      doSend(msg)
+      FrontEndInputActor ! msg
   }
 
   def sendSetupOutChats(chatrooms: ChatRooms): Unit = {
@@ -87,12 +86,13 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
 
 
   def sendSetupOutUser(user: UserRecord) = {
-    val jsonto = Json.toJson(user)
+    val jsonto: JsValue = Json.toJson(user)
+
     val json = Json.obj(
       "msgType" -> "SetupUser",
-      "user" -> Json.obj(
-        "username" -> user.username
-      )
+      "user" ->
+        jsonto.as[JsObject]
+
     )
     doSend(json)
   }

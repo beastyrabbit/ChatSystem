@@ -4,7 +4,7 @@ package actors
   * Created by theer on 02.05.2017.
   */
 
-import actors.UserActor.{setupUserChats}
+import actors.UserActor.setupUserChats
 import akka.actor._
 import objects.{Tables, UserRecord}
 import play.api.db.slick.DatabaseConfigProvider
@@ -12,11 +12,11 @@ import play.api.{Logger, Play}
 import slick.jdbc.H2Profile.api._
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
-import actors.UserActor.{ChatRooms, Chat}
+import actors.UserActor.{Chat, ChatRooms}
 
 class DatenBankActor extends Actor {
 
@@ -44,17 +44,18 @@ class DatenBankActor extends Actor {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val chatDB = tables.chatQuery
-    val chatquery = chatDB.filter(_.userid === user.userid)
-    val readoutChatFuture = db.run(chatquery.result)
-    readoutChatFuture onComplete {
-      case Success(sql: Seq[(Option[Int], Int, String)]) => {
-        val chatrooms = new ChatRooms(sql.map(elem => new Chat(elem._1.get, elem._2, elem._3)))
+    val chattoUserDB = tables.userToChatQuery
+    val chatjoinUser = for {
+      (c, u) <- chatDB join chattoUserDB on (_.chatid === _.chatid)
+    } yield (c.chatid, c.name, u.userid)
+    val readoutChatFuture: Future[Seq[(Int, String, Int)]] = db.run(chatjoinUser.result)
+    readoutChatFuture.onSuccess {
+      case sql: Seq[(Int, String, Int)] => {
+        val chatrooms = new ChatRooms(sql.filter(p => p._3 == user.userid).map(elem => new Chat(chatid = elem._1, name = elem._2, userid = elem._3)))
         sendto ! setupUserChats(chatrooms)
       }
-      case Failure(ex) => throw ex
 
     }
-
   }
 
   def checkCredentialsImp(olduser: UserRecord): Boolean = {
@@ -84,7 +85,9 @@ class DatenBankActor extends Actor {
   }
 
 
-  private def getUserDataFuture(olduser: UserRecord) = {
+  private def getUserDataFuture(olduser: UserRecord)
+
+  = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val userDB = tables.userQuery

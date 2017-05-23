@@ -21,7 +21,7 @@ class FrontEndInputActor extends Actor {
     msgType match {
       case JsString("message") => messagepros(msg)
       case JsString("") => ???
-      case _ => println("Das kenn ich nciht " + msg)
+      case _ => println("Das kenn ich nicht " + msg)
     }
   }
 

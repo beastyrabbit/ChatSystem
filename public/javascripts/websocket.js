@@ -1,10 +1,22 @@
 var wsUri = "ws://localhost:9000/socket";
 var websocket
+var activChat
+var user
 
+const Chat = ({name, onlinestate, chatid}) => `
+      <div class="conversation btn" id="ChatButton" chatid=${chatid}>
+        <div class="media-body">
+            <h5 class="media-heading">${name}</h5>
+            <small class="pull-right time">${onlinestate}</small>
+        </div>
+      </div>
+`;
 
+$(document)
 $(document).ready(function () {
     websocket = new WebSocket(wsUri);
     initWebSocket();
+    addButtons();
     /! * Slide MembersInfo * ! /
     $('.info-btn').on('click', function () {
         $("#Messages").toggleClass('col-sm-12 col-sm-9');
@@ -13,7 +25,7 @@ $(document).ready(function () {
     $('#send-button').on('click', function () {
         let textArea = $("#inputArea")
         let message = {
-            "type": "message", "text": (textArea.val().toString())
+            "type": "message", "text": textArea.val().toString(), "chatid": activChat.toString()
         }
         doSend(message)
         textArea.value = ""
@@ -46,13 +58,25 @@ function onClose(evt) {
     console.log("DISCONNECTED");
 }
 
+let updateView = function () {
+
+}
+function addButtons() {
+    /! * Chat Select Button * ! /
+    $(document).on("click", "#ChatButton", function (e) {
+        console.log("hallo")
+        activChat = this.getAttribute("chatid")
+        updateView()
+    });
+    ;
+}
 function setupChatRooms(chatRoomArray) {
-    console.log(datarecive)
-    forEach(chatRoom in chatRoomArray)
+    content = $(document.getElementsByClassName("row content-wrap")[1])
+    for (chatRoom of chatRoomArray)
     {
-
+        content.append($(Chat({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
     }
-
+    addButtons();
 }
 function onMessage(evt) {
     let datarecive = JSON.parse(evt.data)
@@ -61,13 +85,13 @@ function onMessage(evt) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
+            user = datarecive.user
         case
         "SetupChatRooms":
-            setupChatRooms(datarecive)
+            setupChatRooms(datarecive.chatSeq)
 
 
     }
-    console.log(datarecive.msgType)
     return
 }
 

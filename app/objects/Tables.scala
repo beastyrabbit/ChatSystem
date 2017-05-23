@@ -15,6 +15,7 @@ class Tables {
   val historyQuery = TableQuery[History]
   val friendreQuestQuery = TableQuery[Friendrequest]
   val guiSettingsQuery = TableQuery[GuiSettings]
+  val userToChatQuery = TableQuery[UsertoChat]
 
 
   class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])](tag, "USER") {
@@ -40,16 +41,12 @@ class Tables {
   }
 
 
-  class Chat(tag: Tag) extends Table[(Option[Int], Int, String)](tag, "CHAT") {
+  class Chat(tag: Tag) extends Table[(Option[Int], String)](tag, "CHAT") {
     def chatid = column[Int]("CHATID", O.PrimaryKey, O.AutoInc)
 
-    def userid = column[Int]("USERID")
+    def name = column[String]("CHATNAME")
 
-    def name = column[String]("NAME")
-
-    def User = foreignKey("FKChat316436", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-    def * = (chatid.?, userid, name)
+    def * = (chatid.?, name)
   }
 
 
@@ -93,6 +90,18 @@ class Tables {
     def Userto = foreignKey("FKFriendrequ51650", requestto, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def * = (requestfrom, requestto)
+  }
+
+  class UsertoChat(tag: Tag) extends Table[(Int, Int)](tag, "USERTOCHAT") {
+    def chatid = column[Int]("CHATID")
+
+    def userid = column[Int]("USERID")
+
+    def UserFK = foreignKey("FKUsertoChat816378", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+
+    def ChatFK = foreignKey("FKUsertoChat816374", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+
+    def * = (chatid, userid)
   }
 
   class Friends(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDS") {
