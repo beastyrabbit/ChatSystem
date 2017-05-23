@@ -31,8 +31,9 @@ class AKKASystem(system: ActorSystem) {
 
   val userManagerActor = system.actorOf(UserManagerActor.props, "UserManagerActor")
   val dataBaseActor = system.actorOf(DatenBankActor.props, "DatenbankActor")
+  val frontEndInputActor = system.actorOf(FrontEndInputActor.props(this), "FrontEndInputActor")
   implicit val timeout: Timeout = 5.seconds
-
+  val subscribeChat = new SubscribeChat
 
   def checkCredentialsToAKKA(user: UserRecord): Boolean = {
     val future = dataBaseActor ? checkCredentials(user)

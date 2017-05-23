@@ -1,6 +1,6 @@
 var wsUri = "ws://localhost:9000/socket";
 var websocket
-var activChat
+var activChat = 0
 var user
 
 const Chat = ({name, onlinestate, chatid}) => `
@@ -25,12 +25,22 @@ $(document).ready(function () {
     $('#send-button').on('click', function () {
         let textArea = $("#inputArea")
         let message = {
-            "type": "message", "text": textArea.val().toString(), "chatid": activChat.toString()
+            "type": "message", "text": textArea.val().toString(),
+            "chatid": activChat.toString(),
+            "timestamp": new Date().getTime()
         }
         doSend(message)
-        textArea.value = ""
+        textArea.val('')
     })
 });
+function addButtons() {
+    /! * Chat Select Button * ! /
+    $(document).on("click", "#ChatButton", function (e) {
+        activChat = this.getAttribute("chatid")
+        updateView()
+    });
+    ;
+}
 
 function initWebSocket() {
     console.log("My Websocket")
@@ -61,19 +71,10 @@ function onClose(evt) {
 let updateView = function () {
 
 }
-function addButtons() {
-    /! * Chat Select Button * ! /
-    $(document).on("click", "#ChatButton", function (e) {
-        console.log("hallo")
-        activChat = this.getAttribute("chatid")
-        updateView()
-    });
-    ;
-}
+
 function setupChatRooms(chatRoomArray) {
     content = $(document.getElementsByClassName("row content-wrap")[1])
-    for (chatRoom of chatRoomArray)
-    {
+    for (chatRoom of chatRoomArray) {
         content.append($(Chat({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
     }
     addButtons();

@@ -3,6 +3,7 @@ package actors
 import java.sql.Timestamp
 
 import actors.DatenBankActor.{getChats, sendUserData}
+import actors.FrontEndInputActor.newMessage
 import actors.UserManagerActor.addNewUser
 import akka.actor._
 import objects.UserRecord
@@ -74,10 +75,13 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
       sendSetupOutChats(chatrooms)
     case msg: JsValue =>
       Logger.debug(sender() + " recived Message res:" + msg)
-      FrontEndInputActor ! msg
+      system.frontEndInputActor ! newMessage(msg, USER)
+    case chatMessage: ChatMessage =>
+      out ! "Here you go"
   }
 
   def sendSetupOutChats(chatrooms: ChatRooms): Unit = {
+    chatrooms.chatSeq.map(chat => system.subscribeChat.subscribe(context.self, chat.chatid.toString))
     implicit val formatchat = Json.format[Chat]
     implicit val format = Json.format[ChatRooms]
     val json: JsValue = Json.toJson(chatrooms.copy(msgType = "SetupChatRooms"))

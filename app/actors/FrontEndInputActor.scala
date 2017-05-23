@@ -5,29 +5,33 @@ package actors
   */
 
 import akka.actor._
-import play.api.libs.json.{JsString, JsValue}
+import objects.UserRecord
+import play.api.libs.json.{JsString, JsValue, Json}
+import java.sql
 
 
-class FrontEndInputActor extends Actor {
+class FrontEndInputActor(system: AKKASystem) extends Actor {
 
   import FrontEndInputActor._
 
-  def messagepros(msg: JsValue) = {
-    ???
+  def messagepros(msg: JsValue, userRecord: UserRecord) = {
+    val chatMessage = new ChatMessage(user = userRecord, channel = (msg \ "chatid").get.toString(), message = new Message(userRecord.userid.toString, new java.sql.Timestamp((msg \ "timestamp").get.as[Long])))
+    println(chatMessage)
+    system.subscribeChat.publish(chatMessage)
   }
 
-  def checkType(msg: JsValue): Unit = {
+  def checkType(msg: JsValue, userRecord: UserRecord): Unit = {
     val msgType = (msg \ "type").get
     msgType match {
-      case JsString("message") => messagepros(msg)
+      case JsString("message") => messagepros(msg, userRecord)
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }
   }
 
   def receive = {
-    case getMessage(msg: JsValue) =>
-      checkType(msg)
+    case newMessage(msg: JsValue, userRecord: UserRecord) =>
+      checkType(msg, userRecord)
     case TEMPPPER2() =>
       println("TEMPPPER")
     case TEMPPPER3() =>
@@ -44,9 +48,9 @@ class FrontEndInputActor extends Actor {
 
 
 object FrontEndInputActor {
-  def props(): Props = Props(new FrontEndInputActor())
+  def props(system: AKKASystem): Props = Props(new FrontEndInputActor(system: AKKASystem))
 
-  case class getMessage(msg: JsValue)
+  case class newMessage(msg: JsValue, userRecord: UserRecord)
 
   case class TEMPPPER2()
 
