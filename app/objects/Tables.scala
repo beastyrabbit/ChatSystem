@@ -19,7 +19,7 @@ class Tables {
 
 
   class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])](tag, "USER") {
-    def id = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
+    def userid = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
     def username = column[String]("USERNAME")
 
@@ -37,7 +37,7 @@ class Tables {
 
     def picture = column[Option[String]]("PICTURE")
 
-    def * = (id.?, username, password, firstname, lastname, email, nickname, lastlogin, picture)
+    def * = (userid.?, username, password, firstname, lastname, email, nickname, lastlogin, picture)
   }
 
 
@@ -50,7 +50,7 @@ class Tables {
   }
 
 
-  class Timelineentry(tag: Tag) extends Table[(Int, Int, Timestamp, String)](tag, "TIMELINEENTRY") {
+  class Timelineentry(tag: Tag) extends Table[(Option[Int], Int, Timestamp, String)](tag, "TIMELINEENTRY") {
     def timelineid = column[Int]("TIMELINEID", O.PrimaryKey, O.AutoInc)
 
     def userid = column[Int]("USERID")
@@ -59,13 +59,15 @@ class Tables {
 
     def message = column[String]("MESSAGE")
 
-    def User = foreignKey("FKTimelineen399460", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def User = foreignKey("FKTimelineen399460", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def * = (timelineid, userid, deadtime, message)
+    def * = (timelineid.?, userid, deadtime, message)
   }
 
-  class History(tag: Tag) extends Table[(Int, Int, Int, Timestamp)](tag, "HISTORY") {
+  class History(tag: Tag) extends Table[(Option[Int], String, Int, Int, Timestamp)](tag, "HISTORY") {
     def messageid = column[Int]("MESSAGEID", O.PrimaryKey, O.AutoInc)
+
+    def messagetext = column[String]("MESSAGETEXT")
 
     def chatid = column[Int]("CHATID")
 
@@ -73,11 +75,11 @@ class Tables {
 
     def messagetime = column[Timestamp]("MESSAGETIME")
 
-    def User = foreignKey("FKHistory174533", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def User = foreignKey("FKHistory174533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def Chat = foreignKey("FKHistory574831", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def * = (messageid, chatid, userid, messagetime)
+    def * = (messageid.?, messagetext, chatid, userid, messagetime)
   }
 
   class Friendrequest(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDREQUEST") {
@@ -85,9 +87,9 @@ class Tables {
 
     def requestto = column[Int]("REQUESTTO")
 
-    def Userfrom = foreignKey("FKFriendrequ359114", requestfrom, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userfrom = foreignKey("FKFriendrequ359114", requestfrom, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def Userto = foreignKey("FKFriendrequ51650", requestto, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userto = foreignKey("FKFriendrequ51650", requestto, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def * = (requestfrom, requestto)
   }
@@ -97,7 +99,7 @@ class Tables {
 
     def userid = column[Int]("USERID")
 
-    def UserFK = foreignKey("FKUsertoChat816378", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def UserFK = foreignKey("FKUsertoChat816378", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def ChatFK = foreignKey("FKUsertoChat816374", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
@@ -109,9 +111,9 @@ class Tables {
 
     def friendid = column[Int]("friendid")
 
-    def Userfrom = foreignKey("FKFriends855472", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userfrom = foreignKey("FKFriends855472", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def Userto = foreignKey("FKFriends880936", friendid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userto = foreignKey("FKFriends880936", friendid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def * = (userid, friendid)
   }
@@ -126,7 +128,7 @@ class Tables {
 
     def lastchat = column[Int]("LASTCHAT")
 
-    def User = foreignKey("FKGuiSetting68533", userid, userQuery)(_.id, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def User = foreignKey("FKGuiSetting68533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
     def Chat = foreignKey("FKGuiSetting816374", lastchat, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 

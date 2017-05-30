@@ -2,6 +2,7 @@ var wsUri = "ws://localhost:9000/socket";
 var websocket
 var activChat = 0
 var user
+var messageList = new Map()
 
 const Chat = ({name, onlinestate, chatid}) => `
       <div class="conversation btn" id="ChatButton" chatid=${chatid}>
@@ -79,6 +80,27 @@ function setupChatRooms(chatRoomArray) {
     }
     addButtons();
 }
+
+function getMessageforChatRoom(chatid) {
+    let message = {
+        "type": "messageRequest",
+        "chatid": chatid,
+    }
+    doSend(message)
+}
+
+function updateMessage(data) {
+    if (messageList.has(data.chatid)) {
+
+    } else {
+        getMessageforChatRoom(data.chatid);
+    }
+
+
+}
+function setupMessageChat(datarecive) {
+
+}
 function onMessage(evt) {
     let datarecive = JSON.parse(evt.data)
     console.log("Websocket got message: " + evt.data)
@@ -87,9 +109,19 @@ function onMessage(evt) {
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
             user = datarecive.user
+            break;
         case
         "SetupChatRooms":
             setupChatRooms(datarecive.chatSeq)
+            break;
+        case
+        "UpdateMessage":
+            updateMessage(datarecive)
+            break;
+        case
+        "SetupMessageChat":
+            setupMessageChat(datarecive)
+            break;
 
 
     }

@@ -18,6 +18,7 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.pattern.ask
+import models.{ChatRoomElement, ChatRooms}
 
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
@@ -75,15 +76,12 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
       sendSetupOutChats(chatrooms)
     case msg: JsValue =>
       Logger.debug(sender() + " recived Message res:" + msg)
-      system.frontEndInputActor ! newMessage(msg, USER)
-    case chatMessage: ChatMessage =>
-      println("Back to user" + chatMessage)
-      out ! "Here you go"
+      system.frontEndInputActor ! newMessage(msg, USER, out)
   }
 
   def sendSetupOutChats(chatrooms: ChatRooms): Unit = {
-    chatrooms.chatSeq.map(chat => system.subscribeChat.subscribe(context.self, "ChatRoom" + chat.chatid.toString))
-    implicit val formatchat = Json.format[Chat]
+    chatrooms.chatSeq.map(chat => system.subscribeChat.subscribe(out, chat.chatid.toString))
+    implicit val formatchat = Json.format[ChatRoomElement]
     implicit val format = Json.format[ChatRooms]
     val json: JsValue = Json.toJson(chatrooms.copy(msgType = "SetupChatRooms"))
     doSend(json)
@@ -116,10 +114,6 @@ object UserActor {
   case class openWebsocket()
 
   case class setupUserChats(chatrooms: ChatRooms)
-
-  case class ChatRooms(chatSeq: Seq[Chat], msgType: String = "")
-
-  case class Chat(chatid: Int, userid: Int, name: String)
 
 
 }
