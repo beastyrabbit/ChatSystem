@@ -15,8 +15,9 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   import FrontEndInputActor._
 
   def messagepros(msg: JsValue, userRecord: UserRecord) = {
-    val chatMessage = new ChatMessage(user = userRecord, channel = (msg \ "chatid").get.toString(), message = new Message(userRecord.userid.toString, new java.sql.Timestamp((msg \ "timestamp").get.as[Long])))
-    println(chatMessage)
+    val chatMessage = {
+      new ChatMessage(user = userRecord, channel = "ChatRoom" + (msg \ "chatid").as[String], message = new Message(userid = userRecord.userid.toString, timestamp = new java.sql.Timestamp((msg \ "timestamp").get.as[Long]), text = (msg \ "text").get.as[String]))
+    }
     system.subscribeChat.publish(chatMessage)
   }
 

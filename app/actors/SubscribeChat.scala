@@ -18,9 +18,12 @@ class SubscribeChat extends ActorEventBus with LookupClassification {
 
   override protected def classify(event: Event): Classifier = event.channel
 
-  override protected def publish(event: ChatMessage, subscriber: ActorRef): Unit = subscriber ! event
+  override protected def publish(event: ChatMessage, subscriber: Subscriber): Unit = {
+    println("Actor: " + subscriber + "publish: " + event)
+    subscriber ! event
+  }
 }
 
 case class ChatMessage(channel: String, message: Message, user: UserRecord)
 
-case class Message(userid: String, timestamp: Timestamp)
+case class Message(userid: String, timestamp: Timestamp, text: String)
