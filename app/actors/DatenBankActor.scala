@@ -57,7 +57,7 @@ class DatenBankActor extends Actor {
       saveMessageImp(userRecord, chatMessageElement, chatid,sender())
     case getFriends(user, sendto) =>
       println("test")
-    case addFriend(user, newFriend) =>as kön
+    case addFriend(user, newFriend) =>
       println("test")
     case getChats(user, sendto) =>
       sendChatsImp(user, sendto)

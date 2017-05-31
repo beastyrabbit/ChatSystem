@@ -15,6 +15,18 @@ const Chat = ({name, onlinestate, chatid}) => `
       </div>
 `;
 
+const Message = ({name,message,time}) =>`
+<div class="msg">
+    <div class="media-body">
+    <small class="pull-right time"><i class="fa fa-clock-o"></i> ${time}</small>
+
+<h5 class="media-heading">${name}</h5>
+<small class="col-sm-11">
+   ${message}</div>
+</div>
+`;
+
+
 $(document)
 $(document).ready(function () {
     websocket = new WebSocket(wsUri);
@@ -92,17 +104,14 @@ function getMessageforChatRoomfromBackend(chatid) {
 }
 
 function updateMessage(data) {
-    console.log(messageList)
-    console.log(data.chatid)
-    console.log(messageList.has(data.chatid))
-    if (messageList.has(data.chatid)) {
+    if (messageList.has(Number(data.chatid))) {
         var message = {
-            "messageText": chat.message.text,
-            "messageTime": chat.message.timestamp,
-            "userid": chat.user.userid
+            "messageText": data.message.messagetext,
+            "messageTime": data.message.messagetime,
+            "userid": data.user.userid
         }
-        messageList.set(data.chatid,message)
-        if (!userList.has(message.userid)) {
+        messageList.get(Number(data.chatid)).set(message)
+        if (!userList.has(Number(message.userid))) {
             userList.set(data.user.userid,data.user)
         }
     } else {
@@ -124,7 +133,7 @@ function setupMessageChat(chats) {
             "userid": chat.userid
         }
         messageMap.set(message.messageid,message)
-        if (!userList.has(message.userid)) {
+        if (!userList.has(Number(message.userid))) {
             getUserfromBackend(message.userid)
         }
     }
