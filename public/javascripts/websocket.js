@@ -1,8 +1,10 @@
-var wsUri = "ws://localhost:9000/socket";
-var websocket
-var activChat = 0
-var user
-var messageList = new Map()
+let wsUri = "ws://localhost:9000/socket";
+let websocket
+let activChat = 0;
+let user
+let messageList = new Map() // (chatid,new Map())
+let userList = new Map();
+
 
 const Chat = ({name, onlinestate, chatid}) => `
       <div class="conversation btn" id="ChatButton" chatid=${chatid}>
@@ -81,7 +83,7 @@ function setupChatRooms(chatRoomArray) {
     addButtons();
 }
 
-function getMessageforChatRoom(chatid) {
+function getMessageforChatRoomfromBackend(chatid) {
     let message = {
         "type": "messageRequest",
         "chatid": chatid,
@@ -90,25 +92,53 @@ function getMessageforChatRoom(chatid) {
 }
 
 function updateMessage(data) {
+    console.log(messageList)
+    console.log(data.chatid)
+    console.log(messageList.has(data.chatid))
     if (messageList.has(data.chatid)) {
-
+        var message = {
+            "messageText": chat.message.text,
+            "messageTime": chat.message.timestamp,
+            "userid": chat.user.userid
+        }
+        messageList.set(data.chatid,message)
+        if (!userList.has(message.userid)) {
+            userList.set(data.user.userid,data.user)
+        }
     } else {
-        getMessageforChatRoom(data.chatid);
+        getMessageforChatRoomfromBackend(data.chatid);
     }
 
+}
+function getUserfromBackend(userid) {
 
 }
-function setupMessageChat(datarecive) {
-
+function setupMessageChat(chats) {
+    console.log(chats)
+    var messageMap = new Map()
+    for(chat of chats.messageSeq) {
+        var message = {
+            "messageid": chat.messageid,
+            "messageText": chat.messageText,
+            "messageTime": chat.messageTime,
+            "userid": chat.userid
+        }
+        messageMap.set(message.messageid,message)
+        if (!userList.has(message.userid)) {
+            getUserfromBackend(message.userid)
+        }
+    }
+    messageList.set(chats.chatid, messageMap)
 }
 function onMessage(evt) {
     let datarecive = JSON.parse(evt.data)
-    console.log("Websocket got message: " + evt.data)
+    console.log("Websocket got message:"+ evt.data)
     switch (datarecive.msgType) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
             user = datarecive.user
+            userList.set(user.userid,user)
             break;
         case
         "SetupChatRooms":
@@ -119,11 +149,9 @@ function onMessage(evt) {
             updateMessage(datarecive)
             break;
         case
-        "SetupMessageChat":
-            setupMessageChat(datarecive)
+        "setupMessageChat":
+            setupMessageChat(datarecive.data)
             break;
-
-
     }
     return
 }

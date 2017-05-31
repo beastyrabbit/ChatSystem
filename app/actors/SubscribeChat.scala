@@ -4,7 +4,7 @@ import java.sql.Timestamp
 
 import akka.actor.ActorRef
 import akka.event.{ActorEventBus, LookupClassification}
-import objects.UserRecord
+import objects.{DBMessage, UserRecord}
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, JsResult, JsValue, Json}
 import play.api.libs.json.Json.{fromJson, toJson}
@@ -27,7 +27,7 @@ class SubscribeChat extends ActorEventBus with LookupClassification {
 
   }
 
-  implicit val formatMessage = Json.format[Message]
+  implicit val formatMessage = Json.format[DBMessage]
   implicit val formatChat = Json.format[ChatMessage]
 
   type Event = ChatMessage
@@ -43,6 +43,4 @@ class SubscribeChat extends ActorEventBus with LookupClassification {
   }
 }
 
-case class ChatMessage(chatid: String, message: Message, user: UserRecord, msgType: String = "UpdateMessage")
-
-case class Message(userid: String, timestamp: Timestamp, text: String)
+case class ChatMessage(chatid: String, message: DBMessage, user: UserRecord, msgType: String = "UpdateMessage")

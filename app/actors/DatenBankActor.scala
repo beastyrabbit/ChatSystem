@@ -6,9 +6,10 @@ package actors
 
 import java.sql.Timestamp
 
+import actors.FrontEndInputActor.publishMessage
 import actors.UserActor.setupUserChats
 import akka.actor._
-import objects.{Tables, UserRecord}
+import objects.{DBMessage, Tables, UserRecord}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Logger, Play}
 import slick.jdbc.H2Profile.api._
@@ -19,6 +20,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import models._
+import org.joda.time.DateTime
+import play.api.libs.json._
+import play.api.libs.json.Json.{fromJson, toJson}
 
 class DatenBankActor extends Actor {
 
@@ -27,14 +31,21 @@ class DatenBankActor extends Actor {
   val tables = new Tables
 
 
-  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int): Unit = {
+  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto:ActorRef): Unit= {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val historyDB = tables.historyQuery
-    val insertMsg = DBIO.seq(
-      historyDB += (None, chatMessageElement.messageText, chatid, userRecord.userid, chatMessageElement.messageTime)
-    )
-    db.run(insertMsg)
+    val insertMsg = historyDB returning historyDB.map(_.messageid) into ((item, messageid) => item.copy(messageid = Some(messageid))
+      ) += DBMessage(None, chatMessageElement.messageText, chatid, userRecord.userid, chatMessageElement.messageTime)
+    val future = db.run(insertMsg)
+    future.onSuccess {
+      case dBMessage: DBMessage =>
+        val chatMessage = {
+          new ChatMessage(user = userRecord, chatid = chatid.toString, message = dBMessage)
+        }
+        sendto ! publishMessage(chatMessage)
+      case t:Any => println(t)
+    }
   }
 
   def receive = {
@@ -43,10 +54,10 @@ class DatenBankActor extends Actor {
     case checkCredentials(user: UserRecord) =>
       sender() ! checkCredentialsImp(user: UserRecord)
     case saveMessage(userRecord, chatMessageElement, chatid) =>
-      saveMessageImp(userRecord, chatMessageElement, chatid)
+      saveMessageImp(userRecord, chatMessageElement, chatid,sender())
     case getFriends(user, sendto) =>
       println("test")
-    case addFriend(user, newFriend) =>
+    case addFriend(user, newFriend) =>as kön
       println("test")
     case getChats(user, sendto) =>
       sendChatsImp(user, sendto)
@@ -62,9 +73,31 @@ class DatenBankActor extends Actor {
     val historyquery = historyDB.filter(t => t.userid === userRecord.userid && t.chatid === chatid)
     val historyfuture = db.run(historyquery.result)
     historyfuture.onSuccess {
-      case sql: Seq[(Option[Int], String, Int, Int, Timestamp)] =>
-        val chatMessage = new ChatMessages(chatid, sql.map(elem => new ChatMessageElement(elem._1, elem._2, elem._5, new UserRecord(userid = elem._4))))
+      case sql: Seq[DBMessage] =>
+        val chatMessage = new ChatMessages(chatid, sql)
         println(chatMessage)
+
+        def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+
+        def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+
+        implicit val timestampFormat = new Format[Timestamp] {
+
+          def writes(t: Timestamp): JsValue = toJson(timestampToDateTime(t))
+
+          def reads(json: JsValue): JsResult[Timestamp] = fromJson[DateTime](json).map(dateTimeToTimestamp)
+
+        }
+
+        implicit val formatMessage = Json.format[DBMessage]
+        implicit val formatChat = Json.format[ChatMessages]
+        val jsonto = Json.toJson(chatMessage)
+        val json = Json.obj(
+          "msgType" -> "setupMessageChat",
+            "data" -> jsonto.as[JsObject]
+
+        )
+        sendto ! json
     }
   }
 
@@ -148,5 +181,6 @@ object DatenBankActor {
   case class saveMessage(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int)
 
   case class getMessagefromDB(chat: Int, userRecord: UserRecord, sendto: ActorRef)
+
 
 }
