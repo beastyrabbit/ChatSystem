@@ -31,7 +31,7 @@ class DatenBankActor extends Actor {
   val tables = new Tables
 
 
-  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto:ActorRef): Unit= {
+  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val historyDB = tables.historyQuery
@@ -44,7 +44,6 @@ class DatenBankActor extends Actor {
           new ChatMessage(user = userRecord, chatid = chatid.toString, message = dBMessage)
         }
         sendto ! publishMessage(chatMessage)
-      case t:Any => println(t)
     }
   }
 
@@ -54,7 +53,7 @@ class DatenBankActor extends Actor {
     case checkCredentials(user: UserRecord) =>
       sender() ! checkCredentialsImp(user: UserRecord)
     case saveMessage(userRecord, chatMessageElement, chatid) =>
-      saveMessageImp(userRecord, chatMessageElement, chatid,sender())
+      saveMessageImp(userRecord, chatMessageElement, chatid, sender())
     case getFriends(user, sendto) =>
       println("test")
     case addFriend(user, newFriend) =>
@@ -63,19 +62,31 @@ class DatenBankActor extends Actor {
       sendChatsImp(user, sendto)
     case getMessagefromDB(chat, userRecord, sendto) =>
       getMessagefromDBImp(chat, userRecord, sendto)
+    case saveUser(record: UserRecord) =>
+      saveUserImp(record)
 
   }
+
+  def saveUserImp(record: UserRecord): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val UserDB = tables.userQuery
+    val insert = DBIO.seq(
+      UserDB += ((None, record.username, record.password, record.firstname, record.lastname, record.email, record.nickname, None, None))
+    )
+    db.run(insert)
+  }
+
 
   def getMessagefromDBImp(chatid: Int, userRecord: UserRecord, sendto: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val historyDB = tables.historyQuery
-    val historyquery = historyDB.filter(t => t.userid === userRecord.userid && t.chatid === chatid)
+    val historyquery = historyDB.filter(t => t.chatid === chatid)
     val historyfuture = db.run(historyquery.result)
     historyfuture.onSuccess {
       case sql: Seq[DBMessage] =>
         val chatMessage = new ChatMessages(chatid, sql)
-        println(chatMessage)
 
         def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
 
@@ -94,7 +105,7 @@ class DatenBankActor extends Actor {
         val jsonto = Json.toJson(chatMessage)
         val json = Json.obj(
           "msgType" -> "setupMessageChat",
-            "data" -> jsonto.as[JsObject]
+          "data" -> jsonto.as[JsObject]
 
         )
         sendto ! json
@@ -182,5 +193,6 @@ object DatenBankActor {
 
   case class getMessagefromDB(chat: Int, userRecord: UserRecord, sendto: ActorRef)
 
+  case class saveUser(record: UserRecord)
 
 }

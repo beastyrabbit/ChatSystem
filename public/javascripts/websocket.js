@@ -6,7 +6,7 @@ let messageList = new Map() // (chatid,new Map())
 let userList = new Map();
 
 
-const Chat = ({name, onlinestate, chatid}) => `
+const ChatName = ({name, onlinestate, chatid}) => `
       <div class="conversation btn" id="ChatButton" chatid=${chatid}>
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
@@ -15,7 +15,7 @@ const Chat = ({name, onlinestate, chatid}) => `
       </div>
 `;
 
-const Message = ({name,message,time}) =>`
+const Message = ({name, message, time}) => `
 <div class="msg">
     <div class="media-body">
     <small class="pull-right time"><i class="fa fa-clock-o"></i> ${time}</small>
@@ -52,7 +52,7 @@ function addButtons() {
     /! * Chat Select Button * ! /
     $(document).on("click", "#ChatButton", function (e) {
         activChat = this.getAttribute("chatid")
-        updateView()
+        updateScreen()
     });
     ;
 }
@@ -87,18 +87,56 @@ let updateView = function () {
 
 }
 
+function updateScreen() {
+    setMessagesForChat(activChat)
+    MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]
+    MessageScreen.scrollTop = MessageScreen.scrollHeight
+}
+
 function setupChatRooms(chatRoomArray) {
     content = $(document.getElementsByClassName("row content-wrap")[1])
     for (chatRoom of chatRoomArray) {
-        content.append($(Chat({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
+        content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
     }
     addButtons();
+    activChat = chatRoomArray[0].chatid
+    updateScreen()
+}
+
+function setMessagesForChat(chatid) {
+    content = $(document.getElementsByClassName("row content-wrap messages"))
+    content.empty()
+    if (messageList.has(Number(chatid))) {
+        messages = messageList.get(Number(chatid))
+        for (message of messages.values()) {
+            user = getUser(message.userid)
+            content.append($(Message({
+                name: user.username,
+                message: message.messageText,
+                time: new Date(message.messageTime).toLocaleString()
+            })))
+        }
+    } else {
+        getMessageforChatRoomfromBackend(chatid)
+    }
+}
+function getUser(userid) {
+    if (userList.has(Number(userid))) {
+        return userList.get(Number(userid))
+    } else {
+        getUserfromBackend(userid)
+        let temp = {
+            username: "Dummy"
+
+        };
+        return temp
+    }
 }
 
 function getMessageforChatRoomfromBackend(chatid) {
     let message = {
         "type": "messageRequest",
-        "chatid": chatid,
+        "chatid": chatid.toString(),
     }
     doSend(message)
 }
@@ -106,48 +144,66 @@ function getMessageforChatRoomfromBackend(chatid) {
 function updateMessage(data) {
     if (messageList.has(Number(data.chatid))) {
         var message = {
+            "messageid": data.message.messageid,
             "messageText": data.message.messagetext,
             "messageTime": data.message.messagetime,
             "userid": data.user.userid
         }
-        messageList.get(Number(data.chatid)).set(message)
+        massages = messageList.get(Number(data.chatid))
+        massages.set(message.messageid, message)
         if (!userList.has(Number(message.userid))) {
-            userList.set(data.user.userid,data.user)
+            userList.set(data.user.userid, data.user)
         }
+        updateScreen()
     } else {
         getMessageforChatRoomfromBackend(data.chatid);
     }
 
 }
 function getUserfromBackend(userid) {
+    let message = {
+        "type": "UserRequest",
+        "userid": userid.toString(),
+    }
+    doSend(message)
+    let temp = {
+        username: "Dummy"
+
+    };
+    userList.set(userid, temp)
 
 }
 function setupMessageChat(chats) {
     console.log(chats)
     var messageMap = new Map()
-    for(chat of chats.messageSeq) {
+    for (chat of chats.messageSeq) {
         var message = {
             "messageid": chat.messageid,
-            "messageText": chat.messageText,
-            "messageTime": chat.messageTime,
+            "messageText": chat.messagetext,
+            "messageTime": chat.messagetime,
             "userid": chat.userid
         }
-        messageMap.set(message.messageid,message)
+        messageMap.set(message.messageid, message)
         if (!userList.has(Number(message.userid))) {
             getUserfromBackend(message.userid)
         }
     }
     messageList.set(chats.chatid, messageMap)
+    updateScreen()
+}
+function addUser(user) {
+    userList.set(user.userid, user)
+    updateScreen()
 }
 function onMessage(evt) {
     let datarecive = JSON.parse(evt.data)
-    console.log("Websocket got message:"+ evt.data)
+    console.log("Websocket got message:" + evt.data)
     switch (datarecive.msgType) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
             user = datarecive.user
-            userList.set(user.userid,user)
+            userList.set(user.userid, user)
             break;
         case
         "SetupChatRooms":
@@ -160,6 +216,10 @@ function onMessage(evt) {
         case
         "setupMessageChat":
             setupMessageChat(datarecive.data)
+            break;
+        case
+        "AddUser":
+            addUser(datarecive.user)
             break;
     }
     return

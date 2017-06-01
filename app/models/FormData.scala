@@ -9,6 +9,15 @@ import objects.{DBMessage, UserRecord}
   */
 case class UserData(userName: String, password: String)
 
+case class RegisterData(
+                         userName: String,
+                         Name: Option[String],
+                         nickName: Option[String],
+                         email: Option[String],
+                         password: String,
+                         confirm: String
+                       )
+
 case class ChatRooms(chatSeq: Seq[ChatRoomElement], msgType: String = "")
 
 case class ChatRoomElement(chatid: Int, userid: Int, name: String)

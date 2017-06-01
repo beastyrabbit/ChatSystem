@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 import akka.actor._
 import javax.inject._
 
-import actors.DatenBankActor.{checkCredentials, sendUserData}
+import actors.DatenBankActor.{checkCredentials, saveUser, sendUserData}
 import akka.util.Timeout
 import exceptions.WrongCredentials
 import objects.UserRecord
@@ -18,7 +18,6 @@ import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
-
 import akka.actor.{ActorRef, ActorSystem}
 import akka.serialization._
 import com.typesafe.config.ConfigFactory
@@ -29,6 +28,7 @@ import com.typesafe.config.ConfigFactory
 @Singleton
 class AKKASystem(system: ActorSystem) {
 
+
   val userManagerActor = system.actorOf(UserManagerActor.props, "UserManagerActor")
   val dataBaseActor = system.actorOf(DatenBankActor.props, "DatenbankActor")
   val frontEndInputActor = system.actorOf(FrontEndInputActor.props(this), "FrontEndInputActor")
@@ -38,5 +38,9 @@ class AKKASystem(system: ActorSystem) {
   def checkCredentialsToAKKA(user: UserRecord): Boolean = {
     val future = dataBaseActor ? checkCredentials(user)
     Await.result(future, 10 second).asInstanceOf[Boolean]
+  }
+
+  def registerUser(record: UserRecord) = {
+    dataBaseActor ! saveUser(record)
   }
 }
