@@ -47,8 +47,8 @@ $(document).ready(function () {
         doSend(message)
         textArea.val('')
     });
-    $("#searchbar").on("keydown", function (e) {
-        console.log(e);
+    $("#searchbar").on("keyup", function (e) {
+        getSearchedUserFromBackend()
     });
 });
 
@@ -61,6 +61,15 @@ function addButtons() {
     });
     ;
 
+}
+
+function getSearchedUserFromBackend() {
+    searchtext = $("#searchbar").val()
+    message = {
+        "type": "searchrequest",
+        "searchtext": searchtext
+    }
+    doSend(message)
 }
 
 function initWebSocket() {
