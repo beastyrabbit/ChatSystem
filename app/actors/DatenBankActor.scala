@@ -102,7 +102,7 @@ class DatenBankActor extends Actor {
 
         implicit val formatMessage = Json.format[DBMessage]
         implicit val formatChat = Json.format[ChatMessages]
-        val jsonto = Json.toJson(chatMessage)
+        val jsonto: JsValue = Json.toJson(chatMessage)
         val json = Json.obj(
           "msgType" -> "setupMessageChat",
           "data" -> jsonto.as[JsObject]

@@ -104,7 +104,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       "Nickname" -> optional(text),
       "Email" -> optional(text),
       "Password" -> nonEmptyText,
-      "RepietPassword" -> nonEmptyText
+      "Confirm" -> nonEmptyText
     )(RegisterData.apply)(RegisterData.unapply)
   )
 }
