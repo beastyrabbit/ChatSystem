@@ -43,7 +43,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("message") => messageprossesor(msg, userRecord)
       case JsString("messageRequest") => system.dataBaseActor ! getMessagefromDB((msg \ "chatid").as[String].toInt, userRecord, webSocket)
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
-      case JsString("searchrequest") => ???
+      case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").get.as[String], webSocket)
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }

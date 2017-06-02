@@ -31,22 +31,6 @@ class DatenBankActor extends Actor {
   val tables = new Tables
 
 
-  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto: ActorRef): Unit = {
-    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
-    val db = dbConfig.db
-    val historyDB = tables.historyQuery
-    val insertMsg = historyDB returning historyDB.map(_.messageid) into ((item, messageid) => item.copy(messageid = Some(messageid))
-      ) += DBMessage(None, chatMessageElement.messageText, chatid, userRecord.userid, chatMessageElement.messageTime)
-    val future = db.run(insertMsg)
-    future.onSuccess {
-      case dBMessage: DBMessage =>
-        val chatMessage = {
-          new ChatMessage(user = userRecord, chatid = chatid.toString, message = dBMessage)
-        }
-        sendto ! publishMessage(chatMessage)
-    }
-  }
-
   def receive = {
     case sendUserData(user: UserRecord) =>
       sendUserDataImp(user, sender())
@@ -64,7 +48,33 @@ class DatenBankActor extends Actor {
       getMessagefromDBImp(chat, userRecord, sendto)
     case saveUser(record: UserRecord) =>
       saveUserImp(record)
+    case searchforUser(search: String, webSocket: ActorRef) =>
+      searchforUserImp(search, webSocket)
 
+  }
+
+  def searchforUserImp(search: String, webSocket: ActorRef): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val userDB = tables.userQuery
+    ???
+  }
+
+
+  def saveMessageImp(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto: ActorRef): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val historyDB = tables.historyQuery
+    val insertMsg = historyDB returning historyDB.map(_.messageid) into ((item, messageid) => item.copy(messageid = Some(messageid))
+      ) += DBMessage(None, chatMessageElement.messageText, chatid, userRecord.userid, chatMessageElement.messageTime)
+    val future = db.run(insertMsg)
+    future.onSuccess {
+      case dBMessage: DBMessage =>
+        val chatMessage = {
+          new ChatMessage(user = userRecord, chatid = chatid.toString, message = dBMessage)
+        }
+        sendto ! publishMessage(chatMessage)
+    }
   }
 
   def saveUserImp(record: UserRecord): Unit = {
@@ -194,5 +204,7 @@ object DatenBankActor {
   case class getMessagefromDB(chat: Int, userRecord: UserRecord, sendto: ActorRef)
 
   case class saveUser(record: UserRecord)
+
+  case class searchforUser(search: String, webSocket: ActorRef)
 
 }
