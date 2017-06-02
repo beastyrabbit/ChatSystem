@@ -46,8 +46,13 @@ $(document).ready(function () {
         }
         doSend(message)
         textArea.val('')
-    })
+    });
+    $("#searchbar").on("keydown", function (e) {
+        console.log(e);
+    });
 });
+
+
 function addButtons() {
     /! * Chat Select Button * ! /
     $(document).on("click", "#ChatButton", function (e) {
@@ -55,6 +60,7 @@ function addButtons() {
         updateScreen()
     });
     ;
+
 }
 
 function initWebSocket() {
