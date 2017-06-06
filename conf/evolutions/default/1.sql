@@ -9,7 +9,7 @@ CREATE TABLE User (
   email     VARCHAR(255) NOT NULL,
   nickname  VARCHAR(255),
   lastlogin TIMESTAMP ,
-  picture   BLOB ,
+  picture   VARCHAR(255) ,
   PRIMARY KEY (userid)
 );
 CREATE TABLE Chat (

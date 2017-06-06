@@ -10,7 +10,9 @@ GET         /                    controllers.Application.index
 GET         /assets/*file        controllers.Assets.at(path="/public", file)
 POST        /loginPost           controllers.Application.loginPost
 POST        /regiPost            controllers.Application.regestrieren
+POST        /chat                controllers.Application.updateUser
 GET         /chat                controllers.Application.chat
 GET         /socket              controllers.Application.socket
 GET         /regestrieren        controllers.Application.gotoRegist
 GET         /login               controllers.Application.gotoLogin
+GET         /UpdateUser          controllers.Application.gotoUpdateUserData

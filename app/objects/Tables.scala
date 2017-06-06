@@ -18,7 +18,7 @@ class Tables {
   val userToChatQuery = TableQuery[UsertoChat]
 
 
-  class User(tag: Tag) extends Table[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])](tag, "USER") {
+  class User(tag: Tag) extends Table[UserRecord](tag, "USER") {
     def userid = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
     def username = column[String]("USERNAME")
@@ -37,7 +37,7 @@ class Tables {
 
     def picture = column[Option[String]]("PICTURE")
 
-    def * = (userid.?, username, password, firstname, lastname, email, nickname, lastlogin, picture)
+    def * = (userid.?, username, password, firstname, lastname, email, nickname, lastlogin, picture) <> ((UserRecord.apply _).tupled, UserRecord.unapply)
   }
 
 

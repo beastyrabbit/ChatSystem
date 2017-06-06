@@ -15,7 +15,7 @@ import akka.util.Timeout
 import akka.pattern.ask
 import akka.pattern.{ask, pipe}
 import actors.DatenBankActor._
-import actors.UserManagerActor.addNewUser
+import actors.UserManagerActor.{addNewUser, checkUserBACK}
 import akka.util.Timeout
 import models.ChatMessageElement
 import play.api.Logger
@@ -38,12 +38,17 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   }
 
 
-  def setupChat(userid: Int, user1: UserRecord, sendto: ActorRef): Unit = {
-    val UserFuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = userid))
+  def setupNewChat(userid: Int, user1: UserRecord, sendto: ActorRef): Unit = {
+    val UserFuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
     UserFuture onComplete {
       case Success(user: UserRecord) => {
         system.dataBaseActor ! addChat(user.nickname.getOrElse(user.username), user1, user, sendto)
-
+        val future = system.userManagerActor ? checkUserBACK(user)
+        future onSuccess {
+          case Some(userSet: Set[(UserRecord, ActorRef)]) =>
+            system.dataBaseActor ! getChats(user, userSet.head._2)
+          case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+        }
       }
     }
   }
@@ -55,7 +60,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("messageRequest") => system.dataBaseActor ! getMessagefromDB((msg \ "chatid").as[String].toInt, userRecord, webSocket)
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
       case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").get.as[String], webSocket)
-      case JsString("addNewChat") => setupChat((msg \ "userid").as[String].toInt, userRecord, sender())
+      case JsString("addNewChat") => setupNewChat((msg \ "userid").as[String].toInt, userRecord, sender())
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }
@@ -79,7 +84,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   }
 
   def sendUserDate(msg: JsValue, webSocket: ActorRef): Unit = {
-    val preUser = new UserRecord(userid = (msg \ "userid").get.as[String].toInt)
+    val preUser = new UserRecord(userid = Some((msg \ "userid").as[String].toInt))
     val UserFuture = system.dataBaseActor ? sendUserData(preUser)
     UserFuture onComplete {
       case Success(user: UserRecord) => {

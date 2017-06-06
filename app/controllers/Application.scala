@@ -13,6 +13,7 @@ import actors._
 import actors.UserActor._
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import akka.util.Timeout
 import exceptions.WrongCredentials
 import play.api.i18n.I18nSupport
 import play.api.i18n.MessagesApi
@@ -20,13 +21,15 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import slick.collection.heterogeneous.Zero.+
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
-
+import scala.concurrent.duration._
 
 class Application @Inject()(val messagesApi: MessagesApi, implicit val system: ActorSystem, implicit val materializer: Materializer) extends Controller with I18nSupport {
 
   val AKKASystemRef = new AKKASystem(system);
+  implicit val timeout = Timeout(5 seconds)
 
   def index = Action {
     Ok(views.html.login(loginForm, ""))
@@ -40,21 +43,65 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
     Ok(views.html.login(loginForm, ""))
   }
 
+  def gotoUpdateUserData = Action { implicit request =>
+    val userid = request.cookies.get("userid").get.value
+    println(userid)
+    val future = AKKASystemRef.getUser(new UserRecord(userid = Some(userid.toInt)))
+    val user = Await.result(future, 10 second)
+    Ok(views.html.updateUser(registForm.fill(RegisterData(
+      userName = user.username
+      , Name = Some(user.firstname + " " + user.lastname)
+      , nickName = user.nickname
+      , email = Some(user.email)
+      , picture = user.picture
+      , password = user.password
+      , confirm = user.password
+    )), ""
+    ))
+  }
+
   def loginPost = Action(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
     val newUser = new UserRecord(username = loginData.userName, password = loginData.password)
     if (AKKASystemRef checkCredentialsToAKKA (newUser)) {
-      Redirect(routes.Application.chat()).withSession("user" -> newUser.username)
+      Redirect(routes.Application.chat()).withCookies(Cookie("user", newUser.username))
     } else {
       Ok(views.html.login(loginForm.fill(UserData("admin", "admin")), "Damit kannst du dich nicht einloggen"))
     }
   }
 
-  def regestrieren = Action(parse.form(registForm)) { implicit request =>
-    println("hier")
+
+  def updateUser = Action(parse.form(registForm)) { implicit request =>
+    val cookieuserid = request.cookies.get("userid").get.value.toInt
     val regiData = request.body
-    println(regiData)
     if (regiData.password == regiData.confirm) {
+      Logger.info(" User has been updated Name: " + regiData.Name)
+      val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").map(_.trim).reverse)
+      val firstname = nameArrey.tail.mkString(" ")
+      println("::" + firstname + "::")
+      val lastname = nameArrey.head
+      val newUser = new UserRecord(
+        userid = Some(cookieuserid),
+        username = regiData.userName,
+        password = regiData.password,
+        firstname = firstname,
+        lastname = lastname,
+        email = regiData.email.orNull,
+        nickname = regiData.nickName,
+        picture = regiData.picture)
+      AKKASystemRef updateUserData (newUser)
+      Ok(views.html.chat())
+    }
+    else {
+      Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
+    }
+
+  }
+
+  def regestrieren = Action(parse.form(registForm)) { implicit request =>
+    val regiData = request.body
+    if (regiData.password == regiData.confirm) {
+      Logger.info("New User has been added Name: " + regiData.Name)
       val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").reverse) :+ " "
       val firstname = nameArrey mkString " "
       val lastname = nameArrey.head
@@ -64,26 +111,28 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
         firstname = firstname,
         lastname = lastname,
         email = regiData.email.orNull,
-        nickname = regiData.nickName)
+        nickname = regiData.nickName,
+        picture = regiData.picture)
       AKKASystemRef registerUser (newUser)
       Ok(views.html.login(loginForm.fill(UserData(newUser.username, "")), ""))
     }
 
     else {
-      Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, "", "")), "Passwort stimmt nciht überein"))
+      Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
     }
 
   }
 
   def socket = WebSocket.acceptOrResult[JsValue, JsValue] {
     request =>
-      Future.successful(request.session.get("user") match {
-        case None => Left(Forbidden)
-        case Some(user) => Right(ActorFlow.actorRef(out => UserActor.props(new UserRecord(username = user), out, AKKASystemRef)))
+      println(request.cookies.get("user").get.value)
+      Future.successful(request.cookies.get("user").orNull.value match {
+        case "" => Left(Forbidden)
+        case user => Right(ActorFlow.actorRef(out => UserActor.props(new UserRecord(username = user), out, AKKASystemRef)))
       })
   }
 
-  def chat = Action {
+  def chat() = Action {
     Ok(views.html.chat())
   }
 
@@ -103,6 +152,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       "Name" -> optional(text),
       "Nickname" -> optional(text),
       "Email" -> optional(text),
+      "Picture" -> optional(text),
       "Password" -> nonEmptyText,
       "Confirm" -> nonEmptyText
     )(RegisterData.apply)(RegisterData.unapply)

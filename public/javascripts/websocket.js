@@ -1,4 +1,5 @@
-let wsUri = "ws://localhost:9000/socket";
+var currentLocation = window.location;
+let wsUri = "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
 let websocket
 let activChat = undefined;
 let user
@@ -132,16 +133,25 @@ let updateView = function () {
 }
 
 function setupChatRooms(chatRoomArray) {
-    ChatRoomArray = chatRoomArray
     content = $(document.getElementsByClassName("row content-wrap")[1])
     content.empty()
-    for (chatRoom of chatRoomArray) {
-        content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
+    if (chatRoomArray.length != 0) {
+        ChatRoomArray = chatRoomArray
+        for (chatRoom of chatRoomArray) {
+            if (chatRoom.name == "") {
+                user = getUser(chatRoom.userid)
+                if (user.nickname) {
+                    chatRoom.name = user.nickname
+                } else {
+                    chatRoom.name = user.username
+                }
+            }
+            content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
+        }
+        if (activChat == null) {
+            activChat = chatRoomArray[0].chatid
+        }
     }
-    if (activChat == null) {
-        activChat = chatRoomArray[0].chatid
-    }
-    updateView()
 }
 function updateChatRooms() {
     if (ChatRoomArray != null) {
@@ -149,6 +159,14 @@ function updateChatRooms() {
         content = $(document.getElementsByClassName("row content-wrap")[1])
         content.empty()
         for (chatRoom of chatRoomArray) {
+            if (chatRoom.name) {
+                user = getUser(chatRoom.userid)
+                if (user.nickname) {
+                    chatRoom.name = user.nickname
+                } else {
+                    chatRoom.name = user.username
+                }
+            }
             content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
         }
         if (activChat == null) {
@@ -160,18 +178,20 @@ function updateChatRooms() {
 function setMessagesForChat(chatid) {
     content = $(document.getElementsByClassName("row content-wrap messages"))
     content.empty()
-    if (messageList.has(Number(chatid))) {
-        messages = messageList.get(Number(chatid))
-        for (message of messages.values()) {
-            user = getUser(message.userid)
-            content.append($(Message({
-                name: user.username,
-                message: message.messageText,
-                time: new Date(message.messageTime).toLocaleString()
-            })))
+    if (chatid != null) {
+        if (messageList.has(Number(chatid))) {
+            messages = messageList.get(Number(chatid))
+            for (message of messages.values()) {
+                user = getUser(message.userid)
+                content.append($(Message({
+                    name: user.username,
+                    message: message.messageText,
+                    time: new Date(message.messageTime).toLocaleString()
+                })))
+            }
+        } else {
+            getMessageforChatRoomfromBackend(chatid)
         }
-    } else {
-        getMessageforChatRoomfromBackend(chatid)
     }
 }
 function getUser(userid) {
@@ -180,7 +200,8 @@ function getUser(userid) {
     } else {
         getUserfromBackend(userid)
         let temp = {
-            username: "Dummy"
+            username: "Dummy",
+            nickname: "DummyNick"
 
         };
         return temp
@@ -221,14 +242,14 @@ function getUserfromBackend(userid) {
     }
     doSend(message)
     let temp = {
-        username: "Dummy"
+        username: "Dummy",
+        nickname: "DummyNick"
 
     };
     userList.set(userid, temp)
 
 }
 function setupMessageChat(chats) {
-    console.log(chats)
     var messageMap = new Map()
     for (chat of chats.messageSeq) {
         var message = {
@@ -244,12 +265,6 @@ function setupMessageChat(chats) {
     }
     messageList.set(chats.chatid, messageMap)
     updateView()
-}
-function addUser(user) {
-    if (!userList.has(Number(user.userid))) {
-        userList.set(user.userid, user)
-        updateView()
-    }
 }
 function showSearchResult(searchUserList) {
     content = $(document.getElementsByClassName("row content-wrap")[1])
@@ -274,6 +289,8 @@ function onMessage(evt) {
             document.getElementById("username").innerHTML = datarecive.user.username
             user = datarecive.user
             userList.set(user.userid, user)
+            sessionStorage.setItem("userid", user.userid)
+            document.cookie = "userid=" + user.userid
             break;
         case
         "ChatRooms":
@@ -289,7 +306,8 @@ function onMessage(evt) {
             break;
         case
         "AddUser":
-            addUser(datarecive.user)
+            userList.set(datarecive.user.userid, datarecive.user)
+            updateChatRooms()
             break;
         case
         "searchResult":

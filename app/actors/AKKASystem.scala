@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 import akka.actor._
 import javax.inject._
 
-import actors.DatenBankActor.{checkCredentials, saveUser, sendUserData}
+import actors.DatenBankActor.{checkCredentials, saveUser, sendUserData, updateUser}
 import akka.util.Timeout
 import exceptions.WrongCredentials
 import objects.UserRecord
@@ -42,5 +42,14 @@ class AKKASystem(system: ActorSystem) {
 
   def registerUser(record: UserRecord) = {
     dataBaseActor ! saveUser(record)
+  }
+
+  def updateUserData(record: UserRecord) = {
+    dataBaseActor ! updateUser(record)
+  }
+
+  def getUser(user: UserRecord): Future[UserRecord] = {
+    val future: Future[Any] = dataBaseActor ? sendUserData(user)
+    return future.mapTo[UserRecord]
   }
 }

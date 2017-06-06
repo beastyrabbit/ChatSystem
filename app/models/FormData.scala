@@ -14,6 +14,7 @@ case class RegisterData(
                          Name: Option[String],
                          nickName: Option[String],
                          email: Option[String],
+                         picture: Option[String],
                          password: String,
                          confirm: String
                        )

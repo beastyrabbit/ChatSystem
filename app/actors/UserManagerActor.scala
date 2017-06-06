@@ -20,25 +20,25 @@ class UserManagerActor extends Actor {
     case addNewUser(user: UserRecord, ref: ActorRef, outref: ActorRef) =>
       checkForNewUser(user, ref, outref)
     case checkUserBACK(user: UserRecord) =>
-      sender() ! UserRefList.get(user.userid)
+      sender() ! UserRefList.get(user.userid.get)
     case removeUser(user: UserRecord, ref: ActorRef) =>
-      val userSet = UserRefList.getOrElse(user.userid, Set())
-      UserRefList += (user.userid -> (userSet - (user -> ref)))
-      if (UserRefList.getOrElse(user.userid, Set()).isEmpty) {
-        UserRefList -= (user.userid)
+      val userSet = UserRefList.getOrElse(user.userid.get, Set())
+      UserRefList += (user.userid.get -> (userSet - (user -> ref)))
+      if (UserRefList.getOrElse(user.userid.get, Set()).isEmpty) {
+        UserRefList -= (user.userid.get)
       }
   }
 
 
   def checkForNewUser(user: UserRecord, ref: ActorRef, outref: ActorRef): Unit = {
-    if (UserRefList.contains(user.userid)) {
+    if (UserRefList.contains(user.userid.get)) {
       Logger.warn("Dublicate Login adding Redirect for User: " + user.username)
-      val userSet: Set[(UserRecord, ActorRef)] = UserRefList.get(user.userid).get
+      val userSet: Set[(UserRecord, ActorRef)] = UserRefList.get(user.userid.get).get
       userSet.head._2 ! addWebsocket(outref)
       userSet.head._2 ! sendWebsocketList(ref)
     }
-    val userSet = UserRefList.getOrElse(user.userid, Set())
-    UserRefList += (user.userid -> (userSet + (user -> ref)))
+    val userSet = UserRefList.getOrElse(user.userid.get, Set())
+    UserRefList += (user.userid.get -> (userSet + (user -> ref)))
 
   }
 
