@@ -83,7 +83,7 @@ class UserActor(preUser: UserRecord, out: ActorRef, system: AKKASystem) extends 
     chatrooms.chatSeq.map(chat => system.subscribeChat.subscribe(out, chat.chatid.toString))
     implicit val formatchat = Json.format[ChatRoomElement]
     implicit val format = Json.format[ChatRooms]
-    val json: JsValue = Json.toJson(chatrooms.copy(msgType = "SetupChatRooms"))
+    val json: JsValue = Json.toJson(chatrooms.copy(msgType = "ChatRooms"))
     doSend(json)
   }
 

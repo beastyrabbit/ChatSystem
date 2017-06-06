@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.pattern.ask
 import akka.pattern.{ask, pipe}
-import actors.DatenBankActor.{getChats, getMessagefromDB, saveMessage, sendUserData}
+import actors.DatenBankActor._
 import actors.UserManagerActor.addNewUser
 import akka.util.Timeout
 import models.ChatMessageElement
@@ -27,6 +27,7 @@ import scala.concurrent.duration._
 import scala.util.Success
 
 class FrontEndInputActor(system: AKKASystem) extends Actor {
+  implicit val timeout = Timeout(5 seconds)
 
   import FrontEndInputActor._
 
@@ -37,6 +38,16 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   }
 
 
+  def setupChat(userid: Int, user1: UserRecord, sendto: ActorRef): Unit = {
+    val UserFuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = userid))
+    UserFuture onComplete {
+      case Success(user: UserRecord) => {
+        system.dataBaseActor ! addChat(user.nickname.getOrElse(user.username), user1, user, sendto)
+
+      }
+    }
+  }
+
   def checkType(msg: JsValue, userRecord: UserRecord, webSocket: ActorRef): Unit = {
     val msgType = (msg \ "type").get
     msgType match {
@@ -44,6 +55,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("messageRequest") => system.dataBaseActor ! getMessagefromDB((msg \ "chatid").as[String].toInt, userRecord, webSocket)
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
       case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").get.as[String], webSocket)
+      case JsString("addNewChat") => setupChat((msg \ "userid").as[String].toInt, userRecord, sender())
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }
@@ -67,7 +79,6 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   }
 
   def sendUserDate(msg: JsValue, webSocket: ActorRef): Unit = {
-    implicit val timeout = Timeout(5 seconds)
     val preUser = new UserRecord(userid = (msg \ "userid").get.as[String].toInt)
     val UserFuture = system.dataBaseActor ? sendUserData(preUser)
     UserFuture onComplete {

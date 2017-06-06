@@ -41,12 +41,12 @@ class Tables {
   }
 
 
-  class Chat(tag: Tag) extends Table[(Option[Int], String)](tag, "CHAT") {
+  class Chat(tag: Tag) extends Table[DBChat](tag, "CHAT") {
     def chatid = column[Int]("CHATID", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("CHATNAME")
 
-    def * = (chatid.?, name)
+    def * = (chatid.?, name) <> ((DBChat.apply _).tupled, DBChat.unapply)
   }
 
 
@@ -80,7 +80,7 @@ class Tables {
 
     def Chat = foreignKey("FKHistory574831", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def * = (messageid.?, messagetext, chatid, userid, messagetime) <> ((DBMessage.apply _).tupled,DBMessage.unapply)
+    def * = (messageid.?, messagetext, chatid, userid, messagetime) <> ((DBMessage.apply _).tupled, DBMessage.unapply)
   }
 
   class Friendrequest(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDREQUEST") {
@@ -140,4 +140,6 @@ class Tables {
 
 }
 
-case class DBMessage(messageid:Option[Int], messagetext: String, chatid: Int, userid: Int, messagetime: Timestamp)
+case class DBMessage(messageid: Option[Int], messagetext: String, chatid: Int, userid: Int, messagetime: Timestamp)
+
+case class DBChat(chatid: Option[Int], name: String)

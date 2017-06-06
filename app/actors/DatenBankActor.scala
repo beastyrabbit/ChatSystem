@@ -9,7 +9,7 @@ import java.sql.Timestamp
 import actors.FrontEndInputActor.publishMessage
 import actors.UserActor.setupUserChats
 import akka.actor._
-import objects.{DBMessage, Tables, UserRecord}
+import objects.{DBChat, DBMessage, Tables, UserRecord}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Logger, Play}
 import slick.jdbc.H2Profile.api._
@@ -23,6 +23,8 @@ import models._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import play.api.libs.json.Json.{fromJson, toJson}
+
+import scala.annotation.tailrec
 
 class DatenBankActor extends Actor {
 
@@ -50,14 +52,55 @@ class DatenBankActor extends Actor {
       saveUserImp(record)
     case searchforUser(search: String, webSocket: ActorRef) =>
       searchforUserImp(search, webSocket)
+    case addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef) =>
+      addChatImp(chatname, user1, user2, sendto)
+
+
+  }
+
+  def addChatImp(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val chatDB = tables.chatQuery
+    val chattoUserDB = tables.userToChatQuery
+    val insertChat = chatDB returning chatDB.map(_.chatid) into ((item, chatid) => item.copy(chatid = Some(chatid))
+      ) += DBChat(None, chatname)
+    val future = db.run(insertChat)
+    future.onSuccess {
+      case dBChat: DBChat =>
+        val chatid = dBChat.chatid.get
+        val insertChatUser = DBIO.seq(chattoUserDB ++= Seq((chatid, user1.userid), (chatid, user2.userid)))
+        db.run(insertChatUser)
+        sendChatsImp(user1, sendto)
+    }
 
   }
 
   def searchforUserImp(search: String, webSocket: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
+    val searchWithLike = "%" + search + "%"
     val userDB = tables.userQuery
-    ???
+    val query = userDB.filter(user => user.username like searchWithLike)
+    val future = db.run(query.result)
+    future onSuccess {
+      case sql =>
+        val UserList: List[UserRecord] = convertUsers(sql)
+        val jsonto: JsValue = Json.toJson(UserList)
+        val json = Json.obj(
+          "msgType" -> "searchResult",
+          "data" -> jsonto.as[JsValue]
+        )
+        webSocket ! json
+    }
+  }
+
+  @tailrec
+  final def convertUsers(sqlreadout: Seq[(Option[Int], String, String, String, String, String, Option[String], Option[Timestamp], Option[String])], userList: List[UserRecord] = List.empty): List[UserRecord] = {
+    if (sqlreadout.isEmpty) return userList
+    val userTuple = sqlreadout.head
+    val tempList = userList :+ new UserRecord(userTuple._1.get, userTuple._2, "", userTuple._4, userTuple._5, userTuple._6, userTuple._7, userTuple._8, userTuple._9)
+    convertUsers(sqlreadout.tail, tempList)
   }
 
 
@@ -206,5 +249,7 @@ object DatenBankActor {
   case class saveUser(record: UserRecord)
 
   case class searchforUser(search: String, webSocket: ActorRef)
+
+  case class addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef)
 
 }
