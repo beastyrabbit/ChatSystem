@@ -305,11 +305,12 @@ function onMessage(evt) {
     switch (datarecive.msgType) {
         case
         "SetupUser":
+            console.log(datarecive.user)
             document.getElementById("username").innerHTML = datarecive.user.username
             PrimUser = datarecive.user
-            userList.set(user.userid, user)
-            sessionStorage.setItem("userid", user.userid)
-            document.cookie = "userid=" + user.userid
+            userList.set(PrimUser.userid, PrimUser)
+            sessionStorage.setItem("userid", PrimUser.userid)
+            document.cookie = "userid=" + PrimUser.userid
             break;
         case
         "ChatRooms":
