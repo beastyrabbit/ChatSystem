@@ -124,9 +124,22 @@ html, body {
 
 /**************** MESSAGES *****************/
 /* Message Item */
-.msg {
+.msgEx {
+
     padding: 8px 10px 5px;
     border-bottom: 1px solid #ddd;
+}
+
+.msgIn {
+    text-align: right;
+    padding: 8px 10px 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+.ownmessage {
+    font-size: medium;
+    float: initial;
+    padding: 0px 0px 0px;
 }
 
 /* Message Sender */

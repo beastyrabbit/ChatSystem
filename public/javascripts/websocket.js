@@ -2,7 +2,7 @@ var currentLocation = window.location;
 let wsUri = "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
 let websocket
 let activChat = undefined;
-let user
+let PrimUser
 let messageList = new Map() // (chatid,new Map())
 let userList = new Map();
 let ChatRoomArray = undefined;
@@ -24,17 +24,26 @@ const UserSearch = ({userName, name, userid}) => `
       </div>
 `;
 
-const Message = ({name, message, time}) => `
-<div class="msg">
-    <div class="media-body">
-    <small class="pull-right time"><i class="fa fa-clock-o"></i> ${time}</small>
 
+const MessageIn = ({message, time}) => `
+<div class="msgIn">
+    <div class="media-body">
+    <small class="pull-left time"><i class="fa fa-clock-o"></i> ${time}</small>
+<small class="col-sm-11 ownmessage">
+   ${message}</div>
+</div>
+`;
+
+
+const MessageEx = ({name, message, time}) => `
+<div class="msgEx">
+    <div class="media-body">
+    <small class="time"><i class="fa fa-clock-o"></i> ${time}</small>
 <h5 class="media-heading">${name}</h5>
 <small class="col-sm-11">
    ${message}</div>
 </div>
 `;
-
 
 $(document)
 $(document).ready(function () {
@@ -152,6 +161,7 @@ function setupChatRooms(chatRoomArray) {
             activChat = chatRoomArray[0].chatid
         }
     }
+    updateView()
 }
 function updateChatRooms() {
     if (ChatRoomArray != null) {
@@ -183,11 +193,20 @@ function setMessagesForChat(chatid) {
             messages = messageList.get(Number(chatid))
             for (message of messages.values()) {
                 user = getUser(message.userid)
-                content.append($(Message({
-                    name: user.username,
-                    message: message.messageText,
-                    time: new Date(message.messageTime).toLocaleString()
-                })))
+                if (PrimUser.userid == user.userid) {
+                    content.append($(MessageIn({
+                        message: message.messageText,
+                        time: new Date(message.messageTime).toLocaleString()
+                    })))
+                }
+
+                else {
+                    content.append($(MessageEx({
+                        name: user.username,
+                        message: message.messageText,
+                        time: new Date(message.messageTime).toLocaleString()
+                    })))
+                }
             }
         } else {
             getMessageforChatRoomfromBackend(chatid)
@@ -287,7 +306,7 @@ function onMessage(evt) {
         case
         "SetupUser":
             document.getElementById("username").innerHTML = datarecive.user.username
-            user = datarecive.user
+            PrimUser = datarecive.user
             userList.set(user.userid, user)
             sessionStorage.setItem("userid", user.userid)
             document.cookie = "userid=" + user.userid
@@ -308,6 +327,7 @@ function onMessage(evt) {
         "AddUser":
             userList.set(datarecive.user.userid, datarecive.user)
             updateChatRooms()
+            updateView()
             break;
         case
         "searchResult":
