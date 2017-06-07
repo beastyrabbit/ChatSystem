@@ -11,7 +11,7 @@ const ConvInfo = ({name}) => `
     <div class="contact">
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
-            <i id="trash" class="fa fa-trash" aria-hidden="true"></i>
+            <i id="trash" class="fa fa-trash " aria-hidden="true"></i>
         </div>
     </div>
 `;
@@ -23,7 +23,6 @@ const ChatName = ({name, chatid, img}) => `
             <img src="${img}" alt="fa fa-user-circle-o" style="width:50px;height:50px;">
             <h5 class="media-heading">${name}</h5>
         </div>
-        <i id="trash" class="fa fa-trash" aria-hidden="true"></i>
         </div>
       </div>
 `;
