@@ -11,18 +11,19 @@ const ConvInfo = ({name}) => `
     <div class="contact">
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
+            <i id="trash" class="fa fa-trash" aria-hidden="true"></i>
         </div>
     </div>
 `;
 
-const ChatName = ({name, onlinestate, chatid, img}) => `
+const ChatName = ({name, chatid, img}) => `
       <div class="conversation btn" id="ChatButton" chatid=${chatid}>
         <div class="media-body">
         <div class="imgusername">
             <img src="${img}" alt="fa fa-user-circle-o" style="width:50px;height:50px;">
             <h5 class="media-heading">${name}</h5>
         </div>
-        <small class="pull-right time">${onlinestate}</small>
+        <i id="trash" class="fa fa-trash" aria-hidden="true"></i>
         </div>
       </div>
 `;
@@ -112,6 +113,10 @@ function addButtons() {
         updateChatRooms()
         updateView()
         getNewChatfromBackend(userid)
+    });
+    $(document).on("click", "#trash", function (e) {
+        console.log("hier")
+        e.stopPropagation()
     });
     ;
 
@@ -205,7 +210,6 @@ function appendChatRooms(chatRoom, addedChats) {
         addedChats.push(chatRoom.chatid)
         content.append($(ChatName({
             name: chatRoom.name,
-            onlinestate: "online",
             chatid: chatRoom.chatid,
             img: getUserPicture(user)
         })));

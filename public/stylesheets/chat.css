@@ -146,6 +146,7 @@ html, body {
 .imgusername {
     display: flex;
     align-items: center;
+    float: left;
 }
 
 .ownmessage {
@@ -179,6 +180,11 @@ html, body {
 #TextMessage {
     padding-left: 40px;
     padding-right: 40px;
+}
+
+#trash {
+    float: right;
+    padding: 10px;
 }
 
 /* Message Sender */
