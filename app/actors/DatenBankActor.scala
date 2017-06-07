@@ -5,6 +5,7 @@ package actors
   */
 
 import java.sql.Timestamp
+import javax.inject.Inject
 
 import actors.FrontEndInputActor.publishMessage
 import actors.UserActor.setupUserChats
@@ -68,7 +69,8 @@ class DatenBankActor extends Actor {
     println(record)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
-    val action = userDB.filter(_.userid === record.userid).map(user => (user.username, user.password, user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((record.username, record.password, record.firstname, record.lastname, record.email, record.nickname, record.picture))
+    val action = userDB.filter(_.userid === record.userid).map(user => (user.password, user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((record.password, record.firstname, record.lastname, record.email, record.nickname, record.picture))
+    println(action.statements)
     db.run(action)
   }
 
@@ -82,8 +84,11 @@ class DatenBankActor extends Actor {
       case dBChat: DBChat =>
         val chatid = dBChat.chatid.get
         val insertChatUser = DBIO.seq(chattoUserDB ++= Seq((chatid, user1.userid.get), (chatid, user2.userid.get)))
-        db.run(insertChatUser)
-        sendChatsImp(user1, sendto)
+        val future = db.run(insertChatUser)
+        future.onSuccess {
+          case _ =>
+            sendChatsImp(user1, sendto)
+        }
     }
 
   }
@@ -172,16 +177,24 @@ class DatenBankActor extends Actor {
   }
 
   def sendChatsImp(user: UserRecord, sendto: ActorRef) = {
+    println(user)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
-    val chatjoinUser = for {
-      (c, u) <- chatDB join chattoUserDB on (_.chatid === _.chatid)
-    } yield (c.chatid, c.name, u.userid)
-    val readoutChatFuture: Future[Seq[(Int, String, Int)]] = db.run(chatjoinUser.result)
+    val userid = user.userid.get.toString
+    val query = sql"""SELECT USERTOCHAT.CHATID,USERTOCHAT.USERID,CHAT.CHATNAME
+                        FROM USERTOCHAT
+                        INNER JOIN CHAT
+                        ON CHAT.CHATID=USERTOCHAT.CHATID
+                        WHERE USERTOCHAT.CHATID IN
+                          (SELECT CHATID FROM USERTOCHAT WHERE USERID = #$userid)
+                        AND USERID != #$userid
+                     """.as[(Int, Int, String)]
+    val readoutChatFuture: Future[Vector[(Int, Int, String)]] = db.run(query)
     readoutChatFuture.onSuccess {
-      case sql: Seq[(Int, String, Int)] => {
+      case sql => {
+        println(sql)
         val chatrooms = {
-          new ChatRooms(sql.filter(p => p._3 != user.userid).map(elem => new ChatRoomElement(chatid = elem._1, name = elem._2, userid = elem._3)))
+          new ChatRooms(sql.map(elem => new ChatRoomElement(chatid = elem._1, name = elem._3, userid = elem._2)))
         }
         sendto ! setupUserChats(chatrooms)
       }

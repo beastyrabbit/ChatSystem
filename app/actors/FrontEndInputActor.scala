@@ -42,7 +42,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
     val UserFuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
     UserFuture onComplete {
       case Success(user: UserRecord) => {
-        system.dataBaseActor ! addChat(user.nickname.getOrElse(user.username), user1, user, sendto)
+        system.dataBaseActor ! addChat("", user1, user, sendto)
         val future = system.userManagerActor ? checkUserBACK(user)
         future onSuccess {
           case Some(userSet: Set[(UserRecord, ActorRef)]) =>

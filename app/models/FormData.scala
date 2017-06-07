@@ -19,6 +19,15 @@ case class RegisterData(
                          confirm: String
                        )
 
+case class UpdateData(
+                       Name: Option[String],
+                       nickName: Option[String],
+                       email: Option[String],
+                       picture: Option[String],
+                       password: String,
+                       confirm: String
+                     )
+
 case class ChatRooms(chatSeq: Seq[ChatRoomElement], msgType: String = "")
 
 case class ChatRoomElement(chatid: Int, userid: Int, name: String)

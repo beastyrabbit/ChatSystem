@@ -7,14 +7,26 @@ let messageList = new Map() // (chatid,new Map())
 let userList = new Map();
 let ChatRoomArray = undefined;
 
-const ChatName = ({name, onlinestate, chatid}) => `
-      <div class="conversation btn" id="ChatButton" chatid=${chatid}>
+const ConvInfo = ({name}) => `
+    <div class="contact">
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
-            <small class="pull-right time">${onlinestate}</small>
+        </div>
+    </div>
+`;
+
+const ChatName = ({name, onlinestate, chatid, img}) => `
+      <div class="conversation btn" id="ChatButton" chatid=${chatid}>
+        <div class="media-body">
+        <div class="imgusername">
+            <img src="${img}" alt="fa fa-user-circle-o" style="width:50px;height:50px;">
+            <h5 class="media-heading">${name}</h5>
+        </div>
+        <small class="pull-right time">${onlinestate}</small>
         </div>
       </div>
 `;
+
 const UserSearch = ({userName, name, userid}) => `
       <div class="conversation btn" id="UserButton" userid=${userid}>
         <div class="media-body">
@@ -25,23 +37,26 @@ const UserSearch = ({userName, name, userid}) => `
 `;
 
 
-const MessageIn = ({message, time}) => `
+const MessageIn = ({message, time, userid}) => `
 <div class="msgIn">
     <div class="media-body">
+<div class="col-sm-11 ownmessage chattextmessage" data-userid="${userid}"><span>${message}</span></div>
     <small class="pull-left time"><i class="fa fa-clock-o"></i> ${time}</small>
-<small class="col-sm-11 ownmessage">
-   ${message}</div>
 </div>
 `;
 
+const TextMessage = ({text}) => `<medium id="TextMessage">${text}</medium><br>`;
 
-const MessageEx = ({name, message, time}) => `
+const MessageEx = ({name, message, time, img, userid}) => `
 <div class="msgEx">
     <div class="media-body">
-    <small class="time"><i class="fa fa-clock-o"></i> ${time}</small>
-<h5 class="media-heading">${name}</h5>
-<small class="col-sm-11">
-   ${message}</div>
+     <div class="imgname">
+            <img src="${img}" alt="fa fa-user-circle-o" style="width:20px;height:20px;">
+            <h5 class="media-heading">${name}</h5>
+        </div>
+     <div class="col-sm-11 exmessage chattextmessage" data-userid="${userid}">
+   <span>${message}</span></div>
+       <small class="time"><i class="fa fa-clock-o"></i> ${time}</small>
 </div>
 `;
 
@@ -67,6 +82,13 @@ $(document).ready(function () {
     });
     $("#searchbar").on("keyup", function (e) {
         getSearchedUserFromBackend()
+    });
+    $("#inputArea").on("keydown", function (e) {
+        if (e.keyCode == 13) {
+            $('#send-button').click()
+            $(this).val('')
+            e.preventDefault();
+        }
     });
 });
 
@@ -134,28 +156,70 @@ function onClose(evt) {
     console.log("DISCONNECTED");
 }
 
+function updateConvInfo() {
+    content = $(document.getElementsByClassName("row content-wrap")[3])
+    content.empty()
+    if (!(activChat == null)) {
+        chatRoomArray = ChatRoomArray
+        for (chatRoom of chatRoomArray) {
+            if (chatRoom.chatid == activChat) {
+                user = getUser(chatRoom.userid)
+                var name
+                if (user.nickname) {
+                    name = user.nickname
+                } else {
+                    name = user.username
+                }
+                content.append(ConvInfo({name: name}))
+
+            }
+        }
+        if (PrimUser.nickname) {
+            name = PrimUser.nickname
+        } else {
+            name = PrimUser.username
+        }
+        content.append(ConvInfo({name: name}))
+
+    }
+
+}
 let updateView = function () {
     setMessagesForChat(activChat)
+    updateConvInfo()
     MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]
     MessageScreen.scrollTop = MessageScreen.scrollHeight
     $("#searchbar").val('')
 }
 
+function appendChatRooms(chatRoom, addedChats) {
+    var user = getUser(chatRoom.userid)
+    if (chatRoom.name == "" || chatRoom.name == "DummyNick") {
+        if (user.nickname) {
+            chatRoom.name = user.nickname
+        } else {
+            chatRoom.name = user.username
+        }
+    }
+    if (!(addedChats.find(x => x === chatRoom.chatid))) {
+        addedChats.push(chatRoom.chatid)
+        content.append($(ChatName({
+            name: chatRoom.name,
+            onlinestate: "online",
+            chatid: chatRoom.chatid,
+            img: getUserPicture(user)
+        })));
+    }
+    return addedChats
+}
 function setupChatRooms(chatRoomArray) {
     content = $(document.getElementsByClassName("row content-wrap")[1])
     content.empty()
+    var addedChats = []
     if (chatRoomArray.length != 0) {
         ChatRoomArray = chatRoomArray
         for (chatRoom of chatRoomArray) {
-            if (chatRoom.name == "") {
-                user = getUser(chatRoom.userid)
-                if (user.nickname) {
-                    chatRoom.name = user.nickname
-                } else {
-                    chatRoom.name = user.username
-                }
-            }
-            content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
+            addedChats = appendChatRooms(chatRoom, addedChats);
         }
         if (activChat == null) {
             activChat = chatRoomArray[0].chatid
@@ -168,23 +232,24 @@ function updateChatRooms() {
         chatRoomArray = ChatRoomArray
         content = $(document.getElementsByClassName("row content-wrap")[1])
         content.empty()
+        var addedChats = []
         for (chatRoom of chatRoomArray) {
-            if (chatRoom.name) {
-                user = getUser(chatRoom.userid)
-                if (user.nickname) {
-                    chatRoom.name = user.nickname
-                } else {
-                    chatRoom.name = user.username
-                }
-            }
-            content.append($(ChatName({name: chatRoom.name, onlinestate: "online", chatid: chatRoom.chatid})));
+            addedChats = appendChatRooms(chatRoom, addedChats);
         }
         if (activChat == null) {
             activChat = chatRoomArray[0].chatid
         }
     }
+    updateView()
 }
 
+function getUserPicture(user) {
+    if (!user.picture) {
+        return user.picture = "https://yt3.ggpht.com/-V92UP8yaNyQ/AAAAAAAAAAI/AAAAAAAAAAA/zOYDMx8Qk3c/s900-c-k-no-mo-rj-c0xffffff/photo.jpg"
+    } else {
+        return user.picture
+    }
+}
 function setMessagesForChat(chatid) {
     content = $(document.getElementsByClassName("row content-wrap messages"))
     content.empty()
@@ -193,19 +258,31 @@ function setMessagesForChat(chatid) {
             messages = messageList.get(Number(chatid))
             for (message of messages.values()) {
                 user = getUser(message.userid)
-                if (PrimUser.userid == user.userid) {
-                    content.append($(MessageIn({
-                        message: message.messageText,
-                        time: new Date(message.messageTime).toLocaleString()
-                    })))
-                }
+                messageContent = $('.chattextmessage:last')
+                olduserid = messageContent.data('userid')
+                if (olduserid == user.userid) {
+                    $('.chattextmessage:last span').append($(TextMessage({
+                            text: message.messageText
+                        }
+                    )))
+                } else {
+                    if (PrimUser.userid == user.userid) {
+                        content.append($(MessageIn({
+                            message: TextMessage({text: message.messageText}),
+                            time: new Date(message.messageTime).toLocaleString(),
+                            userid: PrimUser.userid
+                        })))
+                    }
 
-                else {
-                    content.append($(MessageEx({
-                        name: user.username,
-                        message: message.messageText,
-                        time: new Date(message.messageTime).toLocaleString()
-                    })))
+                    else {
+                        content.append($(MessageEx({
+                            name: user.username,
+                            message: TextMessage({text: message.messageText}),
+                            time: new Date(message.messageTime).toLocaleString(),
+                            img: getUserPicture(user),
+                            userid: user.userid
+                        })))
+                    }
                 }
             }
         } else {
@@ -221,7 +298,6 @@ function getUser(userid) {
         let temp = {
             username: "Dummy",
             nickname: "DummyNick"
-
         };
         return temp
     }

@@ -1,112 +1,102 @@
-@(registForm: Form[RegisterData], text: String)(implicit messages: Messages)
+@(updateForm: Form[UpdateData], text: String)(implicit messages: Messages)
 <div>@text</div>
 <link rel="stylesheet" href=" @routes.Assets.at("stylesheets/regestrieren.css")">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans"/>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-    @helper.form(action = routes.Application.updateUser()) {
-        <!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
+@helper.form(action = routes.Application.updateUser()) {
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
 
-                    <!-- Website Font style -->
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
-                    <!-- Google Fonts -->
-                <link href='https://fonts.googleapis.com/css?family=Passion+One' rel='stylesheet' type='text/css'>
-                <link href='https://fonts.googleapis.com/css?family=Oxygen' rel='stylesheet' type='text/css'>
+                <!-- Website Font style -->
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+                <!-- Google Fonts -->
+            <link href='https://fonts.googleapis.com/css?family=Passion+One' rel='stylesheet' type='text/css'>
+            <link href='https://fonts.googleapis.com/css?family=Oxygen' rel='stylesheet' type='text/css'>
 
-                <title>Admin</title>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="row main">
-                        <div class="main-login main-center">
-                            <h5>Update your UserData</h5>
+            <title>Admin</title>
+        </head>
+        <body>
+            <div class="container">
+                <div class="row main">
+                    <div class="main-login main-center">
+                        <h5>Update your UserData</h5>
 
 
-                            <div class="form-group">
-                                <label for="Name" class="cols-sm-2 control-label">Your Name</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-user fa" aria-hidden="true"></i></span>
-                                        <input type="text" class="form-control" name="Name" placeholder="Enter your Name" value="@registForm.data.get("Name")"/>
-                                    </div>
+                        <div class="form-group">
+                            <label for="Name" class="cols-sm-2 control-label">Your Name</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-user fa" aria-hidden="true"></i></span>
+                                    <input type="text" class="form-control" name="Name" placeholder="Enter your Name" value="@updateForm.data.get("Name")"/>
                                 </div>
                             </div>
-
-                            <div class="form-group">
-                                <label for="Email" class="cols-sm-2 control-label">Your Email</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-envelope fa" aria-hidden="true"></i></span>
-                                        <input type="text" class="form-control" name="Email" placeholder="Enter your Email" value="@registForm.data.get("Email")"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class=" form-group">
-                                <label for="Username" class="cols-sm-2 control-label">Username</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-users fa" aria-hidden="true"></i></span>
-                                        <input type="text" class="form-control" name="Username" placeholder="Enter your Username" value = "@registForm.data.get("Username")"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="Nickname" class="cols-sm-2 control-label">Nickname</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-users fa" aria-hidden="true"></i></span>
-                                        <input type="text" class="form-control" name="Nickname" placeholder="Enter your Nickname" value = "@registForm.data.get("Nickname")"/>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="Nickname" class="cols-sm-2 control-label">Picture-Url</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-users fa" aria-hidden="true"></i></span>
-                                        <input type="text" class="form-control" name="Picture" placeholder="Enter your Picture-URL" value = "@registForm.data.get("Picture")"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="Password" class="cols-sm-2 control-label">Password</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
-                                        <input type="password" class="form-control" name="Password" placeholder="Enter your Password" value = "@registForm.data.get("Password")"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="Confirm" class="cols-sm-2 control-label">Confirm Password</label>
-                                <div class="cols-sm-10">
-                                    <div class="input-group">
-                                        <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
-                                        <input type="password" class="form-control" name="Confirm" placeholder="Confirm your Password" value = "@registForm.data.get("Confirm")"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group ">
-                                <button id="submit" type="submit" value="Submit" class="btn btn-primary btn-lg btn-block login-button">
-                                    Submit Update</button>
-                            </div>
-                            <div class="login-register">
-                                <a href="/chat">Back to Chat</a>
-                            </div>
-
-
                         </div>
+
+                        <div class="form-group">
+                            <label for="Email" class="cols-sm-2 control-label">Your Email</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-envelope fa" aria-hidden="true"></i></span>
+                                    <input type="text" class="form-control" name="Email" placeholder="Enter your Email" value="@updateForm.data.get("Email")"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="Nickname" class="cols-sm-2 control-label">Nickname</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-users fa" aria-hidden="true"></i></span>
+                                    <input type="text" class="form-control" name="Nickname" placeholder="Enter your Nickname" value = "@updateForm.data.get("Nickname")"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="Nickname" class="cols-sm-2 control-label">Picture-Url</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-users fa" aria-hidden="true"></i></span>
+                                    <input type="text" class="form-control" name="Picture" placeholder="Enter your Picture-URL" value = "@updateForm.data.get("Picture")"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="Password" class="cols-sm-2 control-label">Password</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
+                                    <input type="password" class="form-control" name="Password" placeholder="Enter your Password" value = "@updateForm.data.get("Password")"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="Confirm" class="cols-sm-2 control-label">Confirm Password</label>
+                            <div class="cols-sm-10">
+                                <div class="input-group">
+                                    <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
+                                    <input type="password" class="form-control" name="Confirm" placeholder="Confirm your Password" value = "@updateForm.data.get("Confirm")"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group ">
+                            <button id="submit" type="submit" value="Submit" class="btn btn-primary btn-lg btn-block login-button">
+                                Submit Update</button>
+                        </div>
+                        <div class="login-register">
+                            <a href="/chat">Back to Chat</a>
+                        </div>
+
+
                     </div>
                 </div>
-            </body>
-        </html>
-    }
+            </div>
+        </body>
+    </html>
+}

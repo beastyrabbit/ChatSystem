@@ -1,6 +1,6 @@
 package controllers
 
-import models.{RegisterData, UserData}
+import models.{RegisterData, UpdateData, UserData}
 import objects.UserRecord
 import play.api._
 import play.api.mvc._
@@ -48,9 +48,8 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
     println(userid)
     val future = AKKASystemRef.getUser(new UserRecord(userid = Some(userid.toInt)))
     val user = Await.result(future, 10 second)
-    Ok(views.html.updateUser(registForm.fill(RegisterData(
-      userName = user.username
-      , Name = Some(user.firstname + " " + user.lastname)
+    Ok(views.html.updateUser(updateForm.fill(UpdateData(
+      Name = Some(user.firstname + " " + user.lastname)
       , nickName = user.nickname
       , email = Some(user.email)
       , picture = user.picture
@@ -71,7 +70,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
   }
 
 
-  def updateUser = Action(parse.form(registForm)) { implicit request =>
+  def updateUser = Action(parse.form(updateForm)) { implicit request =>
     val cookieuserid = request.cookies.get("userid").get.value.toInt
     val regiData = request.body
     if (regiData.password == regiData.confirm) {
@@ -82,7 +81,6 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       val lastname = nameArrey.head
       val newUser = new UserRecord(
         userid = Some(cookieuserid),
-        username = regiData.userName,
         password = regiData.password,
         firstname = firstname,
         lastname = lastname,
@@ -93,7 +91,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       Ok(views.html.chat())
     }
     else {
-      Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
+      Ok(views.html.updateUser(updateForm.fill(UpdateData(regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
     }
 
   }
@@ -156,5 +154,16 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       "Password" -> nonEmptyText,
       "Confirm" -> nonEmptyText
     )(RegisterData.apply)(RegisterData.unapply)
+  )
+
+  val updateForm = Form(
+    mapping(
+      "Name" -> optional(text),
+      "Nickname" -> optional(text),
+      "Email" -> optional(text),
+      "Picture" -> optional(text),
+      "Password" -> nonEmptyText,
+      "Confirm" -> nonEmptyText
+    )(UpdateData.apply)(UpdateData.unapply)
   )
 }

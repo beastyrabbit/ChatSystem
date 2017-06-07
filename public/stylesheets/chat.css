@@ -39,7 +39,7 @@ html, body {
 
 /* Content Wrapper */
 .content-wrap {
-    height: 90%;
+    height: 80%;
     overflow: auto;
 }
 
@@ -128,6 +128,7 @@ html, body {
 
     padding: 8px 10px 5px;
     border-bottom: 1px solid #ddd;
+
 }
 
 .msgIn {
@@ -136,21 +137,75 @@ html, body {
     border-bottom: 1px solid #ddd;
 }
 
+.imgname {
+    display: flex;
+    align-items: center;
+    float: left;
+}
+
+.imgusername {
+    display: flex;
+    align-items: center;
+}
+
 .ownmessage {
     font-size: medium;
     float: initial;
-    padding: 0px 0px 0px;
+    padding: 0px;
+
+}
+
+.exmessage {
+    font-size: medium;
+    float: left;
+    padding: 0px;
+    padding-top: 3px;
+}
+
+.exmessage span {
+    float: left;
+    border-radius: 8px;
+    background: #87ad77;
+    display: inline-block;
+}
+
+.ownmessage span {
+    padding: 0px;
+    border-radius: 8px;
+    background: #73AD21;
+    display: inline-block;
+}
+
+#TextMessage {
+    padding-left: 40px;
+    padding-right: 40px;
 }
 
 /* Message Sender */
 .message-wrap .media-heading {
     color: #2285b3;
     font-weight: 700;
+    padding-left: 8px;
+}
+
+.imgusername .media-heading {
+    color: #00b310;
+    font-weight: 700;
+    padding-left: 8px;
+    font-size: 18px;
+}
+
+.imgname .media-heading {
+    color: #00b310;
+    font-weight: 700;
+    padding-left: 4px;
+    margin: 0px;
 }
 
 /* Message Time */
 .time {
     color: #bfbfbf;
+    float: right;
 }
 
 /*************** SEND MESSAGE **********************/
