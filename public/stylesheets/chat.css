@@ -78,6 +78,7 @@ html, body {
     display: table-cell;
     vertical-align: middle;
     color: #333;
+    align-items: center;
 }
 
 /* Header Properties */
@@ -183,6 +184,7 @@ html, body {
 }
 
 #trash {
+    padding-right: 10px;
 }
 
 /* Message Sender */
