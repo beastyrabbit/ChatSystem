@@ -37,23 +37,32 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
 
   }
 
+  def setupRemoveChat(msg: JsValue, user: UserRecord, sendfrom: ActorRef): Unit = {
+    val checkback = system.dataBaseActor ? removeUserFromChat((msg \ "chatid").as[String].toInt, user)
+    checkback onComplete { case Success(_) =>
+      system.dataBaseActor ! getChats(user, sendfrom)
+
+    }
+  }
 
   def setupNewChat(userid: Int, user1: UserRecord, sendto: ActorRef): Unit = {
     val UserFuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
     UserFuture onComplete {
       case Success(user: UserRecord) => {
-        system.dataBaseActor ! addChat("", user1, user, sendto)
-        val future = system.userManagerActor ? checkUserBACK(user)
-        future onSuccess {
-          case Some(userSet: Set[(UserRecord, ActorRef)]) =>
-            system.dataBaseActor ! getChats(user, userSet.head._2)
-          case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+        system.dataBaseActor ? addChat("", user1, user, sendto) onComplete {
+          case Success(_) =>
+            val future = system.userManagerActor ? checkUserBACK(user)
+            future onSuccess {
+              case Some(userSet: Set[(UserRecord, ActorRef)]) =>
+                system.dataBaseActor ! getChats(user, userSet.head._2)
+              case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+            }
         }
       }
     }
   }
 
-  def checkType(msg: JsValue, userRecord: UserRecord, webSocket: ActorRef): Unit = {
+  def checkType(msg: JsValue, userRecord: UserRecord, webSocket: ActorRef, sendfrom: ActorRef): Unit = {
     val msgType = (msg \ "type").get
     msgType match {
       case JsString("message") => messageprossesor(msg, userRecord)
@@ -61,6 +70,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
       case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").get.as[String], webSocket)
       case JsString("addNewChat") => setupNewChat((msg \ "userid").as[String].toInt, userRecord, sender())
+      case JsString("removechat") => setupRemoveChat(msg, userRecord, sendfrom);
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }
@@ -68,9 +78,8 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
 
   def receive = {
     case newMessage(msg: JsValue, userRecord: UserRecord, webSocket) =>
-      Logger.info("A new Message will be checked from User: " + userRecord.username)
-      Logger.info("The Message is: " + msg)
-      checkType(msg, userRecord, webSocket)
+      Logger.info("User: " + userRecord.username + " ID: " + userRecord.userid + " wants: " + (msg \ "type"))
+      checkType(msg, userRecord, webSocket, sender())
     case publishMessage(chatMessage: ChatMessage) =>
       system.subscribeChat.publish(chatMessage);
     case TEMPPPER3() =>

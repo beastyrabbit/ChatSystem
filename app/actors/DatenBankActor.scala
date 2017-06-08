@@ -19,7 +19,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import models._
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -36,7 +36,6 @@ class DatenBankActor extends Actor {
   val chatDB = tables.chatQuery
   val chattoUserDB = tables.userToChatQuery
   val historyDB = tables.historyQuery
-
 
   def receive = {
     case sendUserData(user: UserRecord) =>
@@ -60,9 +59,19 @@ class DatenBankActor extends Actor {
     case searchforUser(search: String, webSocket: ActorRef) =>
       searchforUserImp(search, webSocket)
     case addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef) =>
-      addChatImp(chatname, user1, user2, sendto)
+      addChatImp(chatname, user1, user2, sendto, sender())
+    case removeUserFromChat(chatid: Int, userRecord: UserRecord) =>
+      removeUserFromChatImp(chatid, userRecord, sender())
 
+  }
 
+  def removeUserFromChatImp(chatid: Int, userRecord: UserRecord, sendto: ActorRef): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val filter = chattoUserDB.filter(row => row.chatid === chatid && row.userid === userRecord.userid)
+    val action = filter.delete
+    val future = db.run(action)
+    future onComplete { case _ => (sendto ! "done") }
   }
 
   def updateUserImp(record: UserRecord): Unit = {
@@ -74,7 +83,7 @@ class DatenBankActor extends Actor {
     db.run(action)
   }
 
-  def addChatImp(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef): Unit = {
+  def addChatImp(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef, sendfrom: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val insertChat = chatDB returning chatDB.map(_.chatid) into ((item, chatid) => item.copy(chatid = Some(chatid))
@@ -88,6 +97,7 @@ class DatenBankActor extends Actor {
         future.onSuccess {
           case _ =>
             sendChatsImp(user1, sendto)
+            sendfrom ! "done"
         }
     }
 
@@ -201,13 +211,12 @@ class DatenBankActor extends Actor {
     }
   }
 
-  def checkCredentialsImp(olduser: UserRecord): Boolean = {
-    val readoutuserFuture = getUserDataFuture(olduser)
-    val user: UserRecord = Await.result(readoutuserFuture, 10 second)
-    if (user.password == olduser.password) {
-      true
-    } else {
-      false
+  def checkCredentialsImp(olduser: UserRecord): Option[UserRecord] = {
+    val future: Future[UserRecord] = getUserDataFuture(olduser)
+    val result: Try[UserRecord] = Await.ready(future, Duration.Inf).value.get
+    result match {
+      case Success(user) => Some(user)
+      case Failure(e) => None
     }
   }
 
@@ -229,7 +238,7 @@ class DatenBankActor extends Actor {
     val db = dbConfig.db
     if (olduser.userid == None) {
       val userquery = userDB.filter(_.username === olduser.username)
-      val run = db.run(userquery.result.head)
+      val run: Future[UserRecord] = db.run(userquery.result.head)
       return run
     }
     else {
@@ -266,5 +275,7 @@ object DatenBankActor {
   case class searchforUser(search: String, webSocket: ActorRef)
 
   case class addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef)
+
+  case class removeUserFromChat(chatid: Int, userRecord: UserRecord)
 
 }

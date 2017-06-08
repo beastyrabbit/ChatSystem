@@ -59,65 +59,79 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
     ))
   }
 
-  def loginPost = Action(parse.form(loginForm)) { implicit request =>
+  def loginPost = Action.async(parse.form(loginForm)) { implicit request =>
     val loginData = request.body
-    val newUser = new UserRecord(username = loginData.userName, password = loginData.password)
-    if (AKKASystemRef checkCredentialsToAKKA (newUser)) {
-      Redirect(routes.Application.chat()).withCookies(Cookie("user", newUser.username))
-    } else {
-      Ok(views.html.login(loginForm.fill(UserData("admin", "admin")), "Damit kannst du dich nicht einloggen"))
+    val newUser = new UserRecord(username = loginData.userName.trim, password = loginData.password)
+    val future: Future[Option[UserRecord]] = AKKASystemRef checkCredentialsToAKKA (newUser)
+    future.map { userOption =>
+      userOption match {
+        case Some(user) =>
+          if (user.password == loginData.password) {
+            Redirect(routes.Application.chat()).withCookies(Cookie("user", newUser.username))
+          } else {
+            Ok(views.html.login(loginForm.fill(UserData("admin", "admin")), "Damit kannst du dich nicht einloggen"))
+          }
+        case None => Ok(views.html.login(loginForm.fill(UserData("admin", "admin")), "Damit kannst du dich nicht einloggen"))
+      }
     }
+      .recover {
+        case e: Exception =>
+          Ok(views.html.login(loginForm.fill(UserData("", "")), e.getMessage))
+
+      }
   }
 
 
-  def updateUser = Action(parse.form(updateForm)) { implicit request =>
-    val cookieuserid = request.cookies.get("userid").get.value.toInt
-    val regiData = request.body
-    if (regiData.password == regiData.confirm) {
-      Logger.info(" User has been updated Name: " + regiData.Name)
-      val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").map(_.trim).reverse)
-      val firstname = nameArrey.tail.mkString(" ")
-      println("::" + firstname + "::")
-      val lastname = nameArrey.head
-      val newUser = new UserRecord(
-        userid = Some(cookieuserid),
-        password = regiData.password,
-        firstname = firstname,
-        lastname = lastname,
-        email = regiData.email.orNull,
-        nickname = regiData.nickName,
-        picture = regiData.picture)
-      AKKASystemRef updateUserData (newUser)
-      Ok(views.html.chat())
-    }
-    else {
-      Ok(views.html.updateUser(updateForm.fill(UpdateData(regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
-    }
+  def updateUser = Action(parse.form(updateForm)) {
+    implicit request =>
+      val cookieuserid = request.cookies.get("userid").get.value.toInt
+      val regiData = request.body
+      if (regiData.password == regiData.confirm) {
+        Logger.info(" User has been updated Name: " + regiData.Name)
+        val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").map(_.trim).reverse)
+        val firstname = nameArrey.tail.mkString(" ")
+        println("::" + firstname + "::")
+        val lastname = nameArrey.head
+        val newUser = new UserRecord(
+          userid = Some(cookieuserid),
+          password = regiData.password,
+          firstname = firstname,
+          lastname = lastname,
+          email = regiData.email.orNull,
+          nickname = regiData.nickName,
+          picture = regiData.picture)
+        AKKASystemRef updateUserData (newUser)
+        Ok(views.html.chat())
+      }
+      else {
+        Ok(views.html.updateUser(updateForm.fill(UpdateData(regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
+      }
 
   }
 
-  def regestrieren = Action(parse.form(registForm)) { implicit request =>
-    val regiData = request.body
-    if (regiData.password == regiData.confirm) {
-      Logger.info("New User has been added Name: " + regiData.Name)
-      val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").reverse) :+ " "
-      val firstname = nameArrey mkString " "
-      val lastname = nameArrey.head
-      val newUser = new UserRecord(
-        username = regiData.userName,
-        password = regiData.password,
-        firstname = firstname,
-        lastname = lastname,
-        email = regiData.email.orNull,
-        nickname = regiData.nickName,
-        picture = regiData.picture)
-      AKKASystemRef registerUser (newUser)
-      Ok(views.html.login(loginForm.fill(UserData(newUser.username, "")), ""))
-    }
+  def regestrieren = Action(parse.form(registForm)) {
+    implicit request =>
+      val regiData = request.body
+      if (regiData.password == regiData.confirm) {
+        Logger.info("New User has been added Name: " + regiData.Name)
+        val nameArrey: Array[String] = (regiData.Name.getOrElse("").split(" ").reverse) :+ " "
+        val firstname = nameArrey mkString " "
+        val lastname = nameArrey.head
+        val newUser = new UserRecord(
+          username = regiData.userName,
+          password = regiData.password,
+          firstname = firstname,
+          lastname = lastname,
+          email = regiData.email.orNull,
+          nickname = regiData.nickName,
+          picture = regiData.picture)
+        AKKASystemRef registerUser (newUser)
+        Ok(views.html.login(loginForm.fill(UserData(newUser.username, "")), ""))
+      }
 
-    else {
-      Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
-    }
+      else {
+        Ok(views.html.regestrieren(registForm.fill(RegisterData(regiData.userName, regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
+      }
 
   }
 

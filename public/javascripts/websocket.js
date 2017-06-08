@@ -11,7 +11,6 @@ const ConvInfo = ({name}) => `
     <div class="contact">
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
-            <i id="trash" class="fa fa-trash " aria-hidden="true"></i>
         </div>
     </div>
 `;
@@ -81,6 +80,7 @@ $(document).ready(function () {
         textArea.val('')
     });
     $("#searchbar").on("keyup", function (e) {
+        if (e.keyCode == 13) $(this).val('')
         getSearchedUserFromBackend()
     });
     $("#inputArea").on("keydown", function (e) {
@@ -114,8 +114,7 @@ function addButtons() {
         getNewChatfromBackend(userid)
     });
     $(document).on("click", "#trash", function (e) {
-        console.log("hier")
-        e.stopPropagation()
+        sendBackendRemoveChat()
     });
     ;
 
@@ -132,6 +131,14 @@ function getSearchedUserFromBackend() {
     } else {
         updateChatRooms()
     }
+}
+
+function sendBackendRemoveChat() {
+    message = {
+        "type": "removechat",
+        "chatid": activChat.toString()
+    }
+    doSend(message)
 }
 
 function initWebSocket() {
@@ -188,7 +195,18 @@ function updateConvInfo() {
     }
 
 }
+function updateTitle() {
+    let content = $('#convTitle');
+    if (ChatRoomArray != null && activChat != null && userList != null) {
+        for (chatroom of ChatRoomArray) {
+            if (chatroom.chatid == activChat) {
+                content[0].innerText = ('Conversation with ' + chatroom.name)
+            }
+        }
+    }
+}
 let updateView = function () {
+    updateTitle()
     setMessagesForChat(activChat)
     updateConvInfo()
     MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]
@@ -378,18 +396,24 @@ function showSearchResult(searchUserList) {
         })));
     }
 }
+
+function setupUser(user) {
+    document.getElementById("username").innerHTML = user.username
+    PrimUser = user
+    userList.set(PrimUser.userid, PrimUser)
+    sessionStorage.setItem("userid", PrimUser.userid)
+    document.cookie = "userid=" + PrimUser.userid
+
+    $('#userPic').attr("src", getUserPicture(user));
+}
+
 function onMessage(evt) {
     let datarecive = JSON.parse(evt.data)
     console.log("Websocket got message:" + evt.data)
     switch (datarecive.msgType) {
         case
         "SetupUser":
-            console.log(datarecive.user)
-            document.getElementById("username").innerHTML = datarecive.user.username
-            PrimUser = datarecive.user
-            userList.set(PrimUser.userid, PrimUser)
-            sessionStorage.setItem("userid", PrimUser.userid)
-            document.cookie = "userid=" + PrimUser.userid
+            setupUser(datarecive.user)
             break;
         case
         "ChatRooms":

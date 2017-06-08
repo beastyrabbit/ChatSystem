@@ -35,9 +35,9 @@ class AKKASystem(system: ActorSystem) {
   implicit val timeout: Timeout = 5.seconds
   val subscribeChat = new SubscribeChat
 
-  def checkCredentialsToAKKA(user: UserRecord): Boolean = {
-    val future = dataBaseActor ? checkCredentials(user)
-    Await.result(future, 10 second).asInstanceOf[Boolean]
+  def checkCredentialsToAKKA(user: UserRecord): Future[Option[UserRecord]] = {
+    val eventualRecord: Future[Option[UserRecord]] = (dataBaseActor ? checkCredentials(user)).mapTo[Option[UserRecord]]
+    return eventualRecord
   }
 
   def registerUser(record: UserRecord) = {
