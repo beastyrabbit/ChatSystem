@@ -68,7 +68,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("message") => messageprossesor(msg, userRecord)
       case JsString("messageRequest") => system.dataBaseActor ! getMessagefromDB((msg \ "chatid").as[String].toInt, userRecord, webSocket)
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
-      case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").get.as[String], webSocket)
+      case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").as[String], (msg \ "displayRole").as[String], webSocket)
       case JsString("addNewChat") => setupNewChat((msg \ "userid").as[String].toInt, userRecord, sender())
       case JsString("removechat") => setupRemoveChat(msg, userRecord, sendfrom);
       case JsString("") => ???
@@ -78,7 +78,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
 
   def receive = {
     case newMessage(msg: JsValue, userRecord: UserRecord, webSocket) =>
-      Logger.info("User: " + userRecord.username + " ID: " + userRecord.userid + " wants: " + (msg \ "type"))
+      Logger.info("User: " + userRecord.username + " ID: " + userRecord.userid.getOrElse("None") + " wants: " + (msg \ "type").as[String])
       checkType(msg, userRecord, webSocket, sender())
     case publishMessage(chatMessage: ChatMessage) =>
       system.subscribeChat.publish(chatMessage);

@@ -15,8 +15,16 @@ const ConvInfo = ({name}) => `
     </div>
 `;
 
+const GroupSearch = ({name, userid}) => `
+    <div class="contact GroupButton" userid=${userid}>
+        <div class="media-body">
+            <h5 class="media-heading">${name}</h5>
+        </div>
+    </div>
+`;
+
 const ChatName = ({name, chatid, img}) => `
-      <div class="conversation btn" id="ChatButton" chatid=${chatid}>
+      <div class="conversation btn ChatButton" chatid=${chatid}>
         <div class="media-body">
         <div class="imgusername">
             <img src="${img}" alt="fa fa-user-circle-o" style="width:50px;height:50px;">
@@ -27,7 +35,7 @@ const ChatName = ({name, chatid, img}) => `
 `;
 
 const UserSearch = ({userName, name, userid}) => `
-      <div class="conversation btn" id="UserButton" userid=${userid}>
+      <div class="conversation btn UserButton"  userid=${userid}>
         <div class="media-body">
             <h5 class="media-heading">${userName}</h5>
             <small class="pull-right time">${"Name: " + name}</small>
@@ -79,10 +87,6 @@ $(document).ready(function () {
         doSend(message)
         textArea.val('')
     });
-    $("#searchbar").on("keyup", function (e) {
-        if (e.keyCode == 13) $(this).val('')
-        getSearchedUserFromBackend()
-    });
     $("#inputArea").on("keydown", function (e) {
         if (e.keyCode == 13) {
             $('#send-button').click()
@@ -90,8 +94,21 @@ $(document).ready(function () {
             e.preventDefault();
         }
     });
+    $('.searchbar').on("keyup", function (e) {
+        if (e.keyCode == 13) $(this).val('')
+        let attRole = this.getAttribute('role');
+        getSearchedUserFromBackend($(this), attRole)
+    });
 });
 
+function sendBackendAddNewUserToGroup(userid) {
+    message = {
+        "type": "ddNewUserToGroup",
+        "chatid": activChat,
+        "userid": userid
+    }
+    doSend(message)
+}
 
 function getNewChatfromBackend(userid) {
     message = {
@@ -102,30 +119,37 @@ function getNewChatfromBackend(userid) {
 }
 function addButtons() {
     /! * Chat Select Button * ! /
-    $(document).on("click", "#ChatButton", function (e) {
+    $(document).on("click", ".ChatButton", function (e) {
         activChat = this.getAttribute("chatid");
         updateView()
     });
     ;
-    $(document).on("click", "#UserButton", function (e) {
+    $(document).on("click", ".UserButton", function (e) {
         userid = this.getAttribute("userid")
         updateChatRooms()
-        updateView()
         getNewChatfromBackend(userid)
+        $('.searchbar').val('')
+        updateView()
     });
     $(document).on("click", "#trash", function (e) {
         sendBackendRemoveChat()
     });
     ;
-
+    $(document).on("click", ".GroupButton", function (e) {
+        userid = this.getAttribute("userid")
+        sendBackendAddNewUserToGroup(userid)
+        $('.searchbar').val('')
+        updateView()
+    });
 }
 
-function getSearchedUserFromBackend() {
-    searchtext = $("#searchbar").val()
+function getSearchedUserFromBackend(thissearchbar, attRole) {
+    searchtext = thissearchbar.val()
     if (searchtext) {
         message = {
             "type": "searchrequest",
-            "searchtext": searchtext
+            "searchtext": searchtext,
+            "displayRole": attRole
         }
         doSend(message)
     } else {
@@ -212,7 +236,9 @@ function highLightActivChat() {
         oldActivChat[0].classList.remove("activchat");
     }
     let newActivChat = document.querySelector('[chatid="' + activChat + '"]');
-    newActivChat.classList.add("activchat")
+    if (newActivChat != null) {
+        newActivChat.classList.add("activchat")
+    }
 }
 let updateView = function () {
     updateTitle()
@@ -221,7 +247,6 @@ let updateView = function () {
     updateConvInfo()
     MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]
     MessageScreen.scrollTop = MessageScreen.scrollHeight
-    $("#searchbar").val('')
 }
 
 function appendChatRooms(chatRoom, addedChats) {
@@ -392,14 +417,22 @@ function setupMessageChat(chats) {
     messageList.set(chats.chatid, messageMap)
     updateView()
 }
-function showSearchResult(searchUserList) {
-    content = $(document.getElementsByClassName("row content-wrap")[1])
+function showSearchResult(searchUserList, displayRole) {
+    console.log(displayRole)
+    if (displayRole == "User") {
+        content = $(document.getElementsByClassName("row content-wrap")[1])
+        templete = UserSearch
+    }
+    else {
+        content = $(document.getElementsByClassName("row content-wrap")[3])
+        templete = GroupSearch
+    }
     content.empty()
     for (user of searchUserList) {
         if (!userList.has(Number(user.userid))) {
             userList.set(user.userid, user)
         }
-        content.append($(UserSearch({
+        content.append($(templete({
             name: user.firstname + " " + user.lastname,
             userName: user.username,
             userid: user.userid
@@ -445,7 +478,7 @@ function onMessage(evt) {
             break;
         case
         "searchResult":
-            showSearchResult(datarecive.data)
+            showSearchResult(datarecive.data, datarecive.displayRole)
             break;
     }
     return

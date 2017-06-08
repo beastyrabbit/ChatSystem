@@ -56,8 +56,8 @@ class DatenBankActor extends Actor {
       saveUserImp(record)
     case updateUser(record: UserRecord) =>
       updateUserImp(record)
-    case searchforUser(search: String, webSocket: ActorRef) =>
-      searchforUserImp(search, webSocket)
+    case searchforUser(search: String, displayRole: String, webSocket: ActorRef) =>
+      searchforUserImp(search, displayRole, webSocket)
     case addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef) =>
       addChatImp(chatname, user1, user2, sendto, sender())
     case removeUserFromChat(chatid: Int, userRecord: UserRecord) =>
@@ -103,7 +103,7 @@ class DatenBankActor extends Actor {
 
   }
 
-  def searchforUserImp(search: String, webSocket: ActorRef): Unit = {
+  def searchforUserImp(search: String, displayRole: String, webSocket: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val searchWithLike = "%" + search + "%"
@@ -114,6 +114,7 @@ class DatenBankActor extends Actor {
         val jsonto: JsValue = Json.toJson(sql)
         val json = Json.obj(
           "msgType" -> "searchResult",
+          "displayRole" -> displayRole,
           "data" -> jsonto.as[JsValue]
         )
         webSocket ! json
@@ -272,7 +273,7 @@ object DatenBankActor {
 
   case class updateUser(record: UserRecord)
 
-  case class searchforUser(search: String, webSocket: ActorRef)
+  case class searchforUser(search: String, displayRole: String, webSocket: ActorRef)
 
   case class addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef)
 
