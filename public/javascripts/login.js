@@ -60,13 +60,14 @@ $(function () {
         function showLoginData() {
             var isChecked = $checkbox.is(':checked');
             if (isChecked) {
-                $('#Username').val(Cookies.get('rememberUsername'))
-                $('#Password').val(Cookies.get('rememberPassword'))
+
+                $('#Username').val(Cookies.get('rememberUsername') || "")
+                $('#Password').val(Cookies.get('rememberPassword') || "")
             }
         }
 
         function init() {
-            $checkbox.prop('checked', JSON.parse(Cookies.get('loginRememberButton')));
+            $checkbox.prop('checked', JSON.parse(Cookies.get('loginRememberButton') || "false"));
             showLoginData()
             updateDisplay();
             // Inject the icon if applicable

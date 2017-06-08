@@ -103,7 +103,7 @@ function getNewChatfromBackend(userid) {
 function addButtons() {
     /! * Chat Select Button * ! /
     $(document).on("click", "#ChatButton", function (e) {
-        activChat = this.getAttribute("chatid")
+        activChat = this.getAttribute("chatid");
         updateView()
     });
     ;
@@ -139,6 +139,7 @@ function sendBackendRemoveChat() {
         "chatid": activChat.toString()
     }
     doSend(message)
+    activChat = undefined
 }
 
 function initWebSocket() {
@@ -205,8 +206,17 @@ function updateTitle() {
         }
     }
 }
+function highLightActivChat() {
+    let oldActivChat = document.getElementsByClassName("activchat");
+    if (oldActivChat.length != 0) {
+        oldActivChat[0].classList.remove("activchat");
+    }
+    let newActivChat = document.querySelector('[chatid="' + activChat + '"]');
+    newActivChat.classList.add("activchat")
+}
 let updateView = function () {
     updateTitle()
+    highLightActivChat()
     setMessagesForChat(activChat)
     updateConvInfo()
     MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]

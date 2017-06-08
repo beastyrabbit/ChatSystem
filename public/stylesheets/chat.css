@@ -91,6 +91,10 @@ html, body {
     color: #333;
 }
 
+.activchat {
+    background-color: rgba(51, 255, 0, 0.13);
+}
+
 /************* CONVERSATIONS *************/
 /* Conversation Item */
 .conversation {
