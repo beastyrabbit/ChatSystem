@@ -1,13 +1,16 @@
-const currentLocation = window.location;
-let wsUri = "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
-let websocket;
-let activChat = undefined;
-let PrimUser;
-let messageList = new Map(); // (chatid,new Map())
-let userList = new Map();
-let ChatRoomArray = undefined;
+(function () {
+    "use strict";
+    const currentLocation = window.location;
+    let wsUri =
+        "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
+    let websocket;
+    let activChat;
+    let PrimUser;
+    let messageList = new Map();
+    let userList = new Map();
+    let ChatRoomArray;
 
-const ConvInfo = ({name}) => `
+    const ConvInfo = ({name}) => `
     <div class="contact">
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
@@ -15,7 +18,7 @@ const ConvInfo = ({name}) => `
     </div>
 `;
 
-const GroupSearch = ({name, userid}) => `
+    const GroupSearch = ({name, userid}) => `
     <div class="contact GroupButton" userid=${userid}>
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
@@ -23,7 +26,7 @@ const GroupSearch = ({name, userid}) => `
     </div>
 `;
 
-const ChatName = ({name, chatid, img}) => `
+    const ChatName = ({name, chatid, img}) => `
       <div class="conversation btn ChatButton" chatid=${chatid}>
         <div class="media-body">
         <div class="imgusername">
@@ -34,7 +37,7 @@ const ChatName = ({name, chatid, img}) => `
       </div>
 `;
 
-const UserSearch = ({userName, name, userid}) => `
+    const UserSearch = ({userName, name, userid}) => `
       <div class="conversation btn UserButton"  userid=${userid}>
         <div class="media-body">
             <h5 class="media-heading">${userName}</h5>
@@ -43,8 +46,7 @@ const UserSearch = ({userName, name, userid}) => `
       </div>
 `;
 
-
-const MessageIn = ({message, time, userid}) => `
+    const MessageIn = ({message, time, userid}) => `
 <div class="msgIn">
     <div class="media-body">
 <div class="col-sm-11 ownmessage chattextmessage" data-userid="${userid}"><span>${message}</span></div>
@@ -52,9 +54,10 @@ const MessageIn = ({message, time, userid}) => `
 </div>
 `;
 
-const TextMessage = ({text}) => `<medium id="TextMessage">${text}</medium><br>`;
+    const TextMessage = ({text}) =>
+        `<medium id="TextMessage">${text}</medium><br>`;
 
-const MessageEx = ({name, message, time, img, userid}) => `
+    const MessageEx = ({name, message, time, img, userid}) => `
 <div class="msgEx">
     <div class="media-body">
      <div class="imgname">
@@ -67,432 +70,425 @@ const MessageEx = ({name, message, time, img, userid}) => `
 </div>
 `;
 
-$(document);
-$(document).ready(function () {
-    websocket = new WebSocket(wsUri);
-    initWebSocket();
-    addButtons();
-    /! * Slide MembersInfo * ! /;
-    $('.info-btn').on('click', function () {
-        $("#Messages").toggleClass('col-sm-12 col-sm-9');
-    });
-    /!* Send Button *!/;
-    $('#send-button').on('click', function () {
-        let textArea = $("#inputArea");
-        let message = {
-            "type": "message", "text": textArea.val().toString(),
-            "chatid": activChat.toString(),
-            "timestamp": new Date().getTime()
-        };
-        doSend(message);
-        textArea.val('')
-    });
-
-    $("#inputArea").on("keydown", function (e) {
-        if (e.keyCode === 13) {
-            $('#send-button').click();
-            $(this).val('');
-            e.preventDefault();
-        }
-    });
-    $('.searchbar').on("keyup", function (e) {
-        if (e.keyCode === 13) $(this).val('');
-        let attRole = this.getAttribute('role');
-        getSearchedUserFromBackend($(this), attRole)
-    });
-});
-
-function sendBackendAddNewUserToGroup(userid) {
-    message = {
-        "type": "NewUserToGroup",
-        "chatid": activChat,
-        "userid": userid
-    };
-    doSend(message)
-}
-
-function getNewChatFromBackend(userid) {
-    message = {
-        "type": "addNewChat",
-        "userid": userid
-    };
-    doSend(message)
-}
-function addButtons() {
-    /! * Chat Select Button * ! /;
-    $(document).on("click", ".ChatButton", function () {
-        activChat = this.getAttribute("chatid");
-        updateView()
-    });
-    $(document).on("click", ".UserButton", function () {
-        userid = this.getAttribute("userid");
-        updateChatRooms();
-        getNewChatFromBackend(userid);
-        $('.searchbar').val('');
-        updateView()
-    });
-    $(document).on("click", "#trash", function () {
-        sendBackendRemoveChat()
-    });
-    $(document).on("click", ".GroupButton", function () {
-        userid = this.getAttribute("userid");
-        sendBackendAddNewUserToGroup(userid);
-        $('.searchbar').val('');
-        updateView()
-    });
-}
-
-function getSearchedUserFromBackend(thissearchbar, attRole) {
-    searchtext = thissearchbar.val();
-    if (searchtext) {
-        message = {
-            "type": "searchRequest",
-            "searchtext": searchtext,
-            "displayRole": attRole
+    function buildAndSendMessage({type = "", chatid = "", userid = "", text = "", timestamp = "", searchtext = "", displayRole = "", messageid = "", messageText = "", messageTime = ""}) {
+        const message = {
+            type: type.toString(),
+            chatid: chatid.toString(),
+            userid: userid.toString(),
+            text: text.toString(),
+            timestamp: timestamp.toString(),
+            searchtext: searchtext.toString(),
+            displayRole: displayRole.toString(),
+            messageid: messageid.toString(),
+            messageText: messageText.toString(),
+            messageTime: messageTime.toString(),
         };
         doSend(message)
-    } else {
-        updateChatRooms()
     }
-}
 
-function sendBackendRemoveChat() {
-    message = {
-        "type": "removeChat",
-        "chatid": activChat.toString()
-    };
-    doSend(message);
-    activChat = undefined
-}
+    function addListeners() {
+        /* Chat Select Button */
+        $(document).on("click", ".ChatButton", function () {
+            activChat = this.getAttribute("chatid");
+            updateView();
+        });
+        $(document).on("click", ".UserButton", function () {
+            const userid = this.getAttribute("userid");
+            updateChatRooms();
+            buildAndSendMessage({type: "addNewChat", userid});
+            $(".searchbar").val("");
+            updateView();
+        });
+        $(document).on("click", "#trash", function () {
+            buildAndSendMessage({
+                type: "removeChat",
+                chatid: activChat
+            });
+            activChat = undefined;
+        });
+        $(document).on("click", ".GroupButton", function () {
+            const userid = this.getAttribute("userid");
+            buildAndSendMessage({type: "NewUserToGroup", chatid: activChat, userid});
+            $(".searchbar").val("");
+            updateView();
+        });
+        /* Slide MembersInfo */
+        $(".info-btn").on("click", function () {
+            $("#Messages").toggleClass("col-sm-12 col-sm-9");
+        });
+        /* Send Button */
+        $("#send-button").on("click", function () {
+            let textArea = $("#inputArea");
+            buildAndSendMessage({
+                type: "message",
+                text: textArea.val(),
+                chatid: activChat,
+                timestamp: new Date().getTime()
+            });
+            textArea.val("");
+        });
 
-function initWebSocket() {
-    console.log("My Websocket");
-    websocket.onopen = function (evt) {
-        onOpen(evt)
-    };
-    websocket.onclose = function (evt) {
-        onClose(evt)
-    };
-    websocket.onmessage = function (evt) {
-        onMessage(evt)
-    };
-    websocket.onerror = function (evt) {
-        onError(evt)
-    };
-}
+        $("#inputArea").on("keydown", function (e) {
+            if (e.keyCode === 13) {
+                $("#send-button").click();
+                $(this).val("");
+                e.preventDefault();
+            }
+        });
+        $(".searchbar").on("keyup", function (e) {
+            if (e.keyCode === 13) {
+                $(this).val("");
+            }
+            let attRole = this.getAttribute("role");
+            getSearchedUserFromBackend($(this), attRole);
+        });
+    }
 
-function onOpen(evt) {
-    console.log(evt);
-    console.log("CONNECTED");
-}
+    function getSearchedUserFromBackend(thissearchbar, attRole) {
+        const searchtext = thissearchbar.val();
+        if (searchtext) {
+            buildAndSendMessage({
+                type: "searchRequest",
+                searchtext: searchtext,
+                displayRole: attRole
+            })
+        } else {
+            updateChatRooms();
+        }
+    }
 
-function onClose(evt) {
-    console.log(evt);
-    console.log("DISCONNECTED");
-}
+    function initWebSocket() {
+        console.log("My Websocket");
+        websocket.onopen = onEvent;
+        websocket.onclose = onEvent;
+        websocket.onmessage = onMessage;
+        websocket.onerror = onEvent;
+    }
 
-function updateConvInfo() {
-    content = $(document.getElementsByClassName("row content-wrap")[3]);
-    content.empty();
-    if (!(activChat === null)) {
-        chatRoomArray = ChatRoomArray;
-        for (chatRoom of chatRoomArray) {
-            if (chatRoom.chatid === activChat) {
-                user = getUser(chatRoom.userid);
-                var name;
-                if (user.nickname) {
-                    name = user.nickname
-                } else {
-                    name = user.username
+    function onEvent(evt) {
+        console.log(evt);
+        console.log("EVENT!!!!");
+    }
+
+    function updateConvInfo() {
+        const content = $(document.getElementsByClassName("row content-wrap")[3]);
+        content.empty();
+        if (activChat !== null) {
+            const chatRoomArray = ChatRoomArray;
+            for (const chatRoom of chatRoomArray) {
+                if (chatRoom.chatid === activChat) {
+                    const user = getUser(chatRoom.userid);
+                    const name = user.nickname || user.username;
+                    content.append(ConvInfo({name}));
                 }
-                content.append(ConvInfo({name: name}))
-
             }
+            const name = PrimUser.nickname || PrimUser.username;
+            content.append(ConvInfo({name}));
         }
-        if (PrimUser.nickname) {
-            name = PrimUser.nickname
-        } else {
-            name = PrimUser.username
-        }
-        content.append(ConvInfo({name: name}))
-
     }
 
-}
-function updateTitle() {
-    let content = $('#convTitle');
-    if (ChatRoomArray !== null && activChat !== null && userList !== null) {
-        for (chatroom of ChatRoomArray) {
-            if (chatroom.chatid === activChat) {
-                content[0].innerText = ('Conversation with ' + chatroom.name)
+    function updateTitle() {
+        let content = $("#convTitle");
+        if (ChatRoomArray !== null && activChat !== null && userList !== null) {
+            for (const chatroom of ChatRoomArray) {
+                if (chatroom.chatid === activChat) {
+                    content[0].innerText = "Conversation with " + chatroom.name;
+                }
             }
         }
     }
-}
-function highLightActivChat() {
-    let oldActivChat = document.getElementsByClassName("activchat");
-    if (oldActivChat.length !== 0) {
-        oldActivChat[0].classList.remove("activchat");
-    }
-    let newActivChat = document.querySelector('[chatid="' + activChat + '"]');
-    if (newActivChat !== null) {
-        newActivChat.classList.add("activchat")
-    }
-}
-let updateView = function () {
-    updateTitle();
-    highLightActivChat();
-    setMessagesForChat(activChat);
-    updateConvInfo();
-    MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0];
-    MessageScreen.scrollTop = MessageScreen.scrollHeight
-};
 
-function appendChatRooms(chatRoom, addedChats) {
-    const user = getUser(chatRoom.userid);
-    if (chatRoom.name === "" || chatRoom.name === "DummyNick") {
-        if (user.nickname) {
-            chatRoom.name = user.nickname
-        } else {
-            chatRoom.name = user.username
+    function highLightActivChat() {
+        let oldActivChat = document.getElementsByClassName("activchat");
+        if (oldActivChat.length !== 0) {
+            oldActivChat[0].classList.remove("activchat");
+        }
+        let newActivChat = document.querySelector('[chatid="' + activChat + '"]');
+        if (newActivChat !== null) {
+            newActivChat.classList.add("activchat");
         }
     }
-    if (!(addedChats.find(x => x === chatRoom.chatid))) {
-        addedChats.push(chatRoom.chatid);
-        content.append($(ChatName({
-            name: chatRoom.name,
-            chatid: chatRoom.chatid,
-            img: getUserPicture(user)
-        })));
+
+    function updateView() {
+        updateTitle();
+        highLightActivChat();
+        setMessagesForChat(activChat);
+        updateConvInfo();
+        const MessageScreen = $(
+            document.getElementsByClassName("row content-wrap messages")
+        )[0];
+        MessageScreen.scrollTop = MessageScreen.scrollHeight;
     }
-    return addedChats
-}
-function setupChatRooms(chatRoomArray) {
-    content = $(document.getElementsByClassName("row content-wrap")[1]);
-    content.empty();
-    let addedChats = [];
-    if (chatRoomArray.length !== 0) {
-        ChatRoomArray = chatRoomArray;
-        for (chatRoom of chatRoomArray) {
-            addedChats = appendChatRooms(chatRoom, addedChats);
+
+    function appendChatRooms(chatRoom, addedChats) {
+        const user = getUser(chatRoom.userid);
+        if (chatRoom.name === "" || chatRoom.name === "DummyNick") {
+            if (user.nickname) {
+                chatRoom.name = user.nickname;
+            } else {
+                chatRoom.name = user.username;
+            }
         }
-        if (activChat === null) {
-            activChat = chatRoomArray[0].chatid
+        if (!addedChats.find(x => x === chatRoom.chatid)) {
+            addedChats.push(chatRoom.chatid);
+            const content = $(document.getElementsByClassName("row content-wrap")[1]);
+            content.append(
+                $(
+                    ChatName({
+                        name: chatRoom.name,
+                        chatid: chatRoom.chatid,
+                        img: getUserPicture(user)
+                    })
+                )
+            );
         }
+        return addedChats;
     }
-    updateView()
-}
-function updateChatRooms() {
-    if (ChatRoomArray !== null) {
-        chatRoomArray = ChatRoomArray;
-        content = $(document.getElementsByClassName("row content-wrap")[1]);
+
+    function setupChatRooms(datarecive) {
+        const chatRoomArray = datarecive.chatSeq;
+        const content = $(document.getElementsByClassName("row content-wrap")[1]);
         content.empty();
         let addedChats = [];
-        for (chatRoom of chatRoomArray) {
-            addedChats = appendChatRooms(chatRoom, addedChats);
+        if (chatRoomArray.length !== 0) {
+            ChatRoomArray = chatRoomArray;
+            for (const chatRoom of chatRoomArray) {
+                addedChats = appendChatRooms(chatRoom, addedChats);
+            }
+            if (activChat === null) {
+                activChat = chatRoomArray[0].chatid;
+            }
         }
-        if (activChat === null) {
-            activChat = chatRoomArray[0].chatid
-        }
+        updateView();
     }
-    updateView()
-}
 
-function getUserPicture(user) {
-    if (!user.picture) {
-        return user.picture = "https://yt3.ggpht.com/-V92UP8yaNyQ/AAAAAAAAAAI/AAAAAAAAAAA/zOYDMx8Qk3c/s900-c-k-no-mo-rj-c0xffffff/photo.jpg"
-    } else {
-        return user.picture
+    function updateChatRooms() {
+        if (ChatRoomArray !== null) {
+            const chatRoomArray = ChatRoomArray;
+            const content = $(document.getElementsByClassName("row content-wrap")[1]);
+            content.empty();
+            let addedChats = [];
+            for (const chatRoom of chatRoomArray) {
+                addedChats = appendChatRooms(chatRoom, addedChats);
+            }
+            if (activChat === null) {
+                activChat = chatRoomArray[0].chatid;
+            }
+        }
+        updateView();
     }
-}
-function setMessagesForChat(chatid) {
-    content = $(document.getElementsByClassName("row content-wrap messages"));
-    content.empty();
-    if (chatid !== null) {
-        if (messageList.has(Number(chatid))) {
-            messages = messageList.get(Number(chatid));
-            for (message of messages.values()) {
-                user = getUser(message.userid);
-                messageContent = $('.chattextmessage:last');
-                olduserid = messageContent.data('userid');
-                if (olduserid === user.userid) {
-                    $('.chattextmessage:last span').append($(TextMessage({
-                            text: message.messageText
+
+    function getUserPicture(user) {
+        if (!user.picture) {
+            return "https://yt3.ggpht.com/-V92UP8yaNyQ/AAAAAAAAAAI/AAAAAAAAAAA/zOYDMx8Qk3c/s900-c-k-no-mo-rj-c0xffffff/photo.jpg";
+        } else {
+            return user.picture;
+        }
+    }
+
+    function setMessagesForChat(chatid) {
+        const content = $(
+            document.getElementsByClassName("row content-wrap messages")
+        );
+        content.empty();
+        if (chatid !== undefined) {
+            if (messageList.has(Number(chatid))) {
+                const messages = messageList.get(Number(chatid));
+                for (const message of messages.values()) {
+                    const user = getUser(message.userid);
+                    const messageContent = $(".chattextmessage:last");
+                    const olduserid = messageContent.data("userid");
+                    if (olduserid === user.userid) {
+                        $(".chattextmessage:last span").append(
+                            $(
+                                TextMessage({
+                                    text: message.messageText
+                                })
+                            )
+                        );
+                    } else {
+                        if (PrimUser.userid === user.userid) {
+                            content.append(
+                                $(
+                                    MessageIn({
+                                        message: TextMessage({text: message.messageText}),
+                                        time: new Date(message.messageTime).toLocaleString(),
+                                        userid: PrimUser.userid
+                                    })
+                                )
+                            );
+                        } else {
+                            content.append(
+                                $(
+                                    MessageEx({
+                                        name: user.username,
+                                        message: TextMessage({text: message.messageText}),
+                                        time: new Date(message.messageTime).toLocaleString(),
+                                        img: getUserPicture(user),
+                                        userid: user.userid
+                                    })
+                                )
+                            );
                         }
-                    )))
-                } else {
-                    if (PrimUser.userid === user.userid) {
-                        content.append($(MessageIn({
-                            message: TextMessage({text: message.messageText}),
-                            time: new Date(message.messageTime).toLocaleString(),
-                            userid: PrimUser.userid
-                        })))
-                    }
-
-                    else {
-                        content.append($(MessageEx({
-                            name: user.username,
-                            message: TextMessage({text: message.messageText}),
-                            time: new Date(message.messageTime).toLocaleString(),
-                            img: getUserPicture(user),
-                            userid: user.userid
-                        })))
                     }
                 }
+            } else {
+                buildAndSendMessage({
+                    type: "messageRequest",
+                    chatid: chatid.toString()
+                });
             }
-        } else {
-            getMessageforChatRoomfromBackend(chatid)
         }
     }
-}
-function getUser(userid) {
-    if (userList.has(Number(userid))) {
-        return userList.get(Number(userid))
-    } else {
-        getUserFromBackend(userid);
-        return temp = {
+
+    function getUser(userid) {
+        if (userList.has(Number(userid))) {
+            return userList.get(Number(userid));
+        } else {
+            getUserFromBackend(userid);
+            return {
+                username: "Dummy",
+                nickname: "DummyNick"
+            };
+        }
+    }
+
+    function getMessageforChatRoomfromBackend(chatid) {
+
+    }
+
+    function updateMessage(data) {
+        if (messageList.has(Number(data.chatid))) {
+            const message = {
+                messageid: data.message.messageid,
+                messageText: data.message.messagetext,
+                messageTime: data.message.messagetime,
+                userid: data.user.userid
+            };
+            const massages = messageList.get(Number(data.chatid));
+            massages.set(message.messageid, message);
+            if (!userList.has(Number(message.userid))) {
+                userList.set(data.user.userid, data.user);
+            }
+            updateView();
+        } else {
+            buildAndSendMessage({
+                type: "messageRequest",
+                chatid: data.chatid
+            });
+        }
+    }
+
+    /**
+     *
+     * @param userid
+     */
+    function getUserFromBackend(userid) {
+        buildAndSendMessage({
+            type: "UserRequest",
+            userid: userid
+        });
+        let temp = {
             username: "Dummy",
             nickname: "DummyNick"
         };
+        userList.set(userid, temp);
     }
-}
 
-function getMessageforChatRoomfromBackend(chatid) {
-    let message = {
-        "type": "messageRequest",
-        "chatid": chatid.toString(),
-    };
-    doSend(message)
-}
-
-function updateMessage(data) {
-    if (messageList.has(Number(data.chatid))) {
-        const message = {
-            "messageid": data.message.messageid,
-            "messageText": data.message.messagetext,
-            "messageTime": data.message.messagetime,
-            "userid": data.user.userid
-        };
-        massages = messageList.get(Number(data.chatid));
-        massages.set(message.messageid, message);
-        if (!userList.has(Number(message.userid))) {
-            userList.set(data.user.userid, data.user)
+    function setupMessageChat(datarecive) {
+        const chats = datarecive.data;
+        const messageMap = new Map();
+        for (const chat of chats.messageSeq) {
+            const message = {
+                messageid: chat.messageid,
+                messageText: chat.messagetext,
+                messageTime: chat.messagetime,
+                userid: chat.userid
+            };
+            messageMap.set(message.messageid, message);
+            if (!userList.has(Number(message.userid))) {
+                getUserFromBackend(message.userid);
+            }
         }
-        updateView()
-    } else {
-        getMessageforChatRoomfromBackend(data.chatid);
+        messageList.set(chats.chatid, messageMap);
+        updateView();
     }
 
-}
-/**
- *
- * @param userid
- */
-function getUserFromBackend(userid) {
-    let message = {
-        "type": "UserRequest",
-        "userid": userid.toString(),
-    };
-    doSend(message);
-    let temp = {
-        username: "Dummy",
-        nickname: "DummyNick"
-
-    };
-    userList.set(userid, temp)
-
-}
-function setupMessageChat(chats) {
-    const messageMap = new Map();
-    for (chat of chats.messageSeq) {
-        const message = {
-            "messageid": chat.messageid,
-            "messageText": chat.messagetext,
-            "messageTime": chat.messagetime,
-            "userid": chat.userid
-        };
-        messageMap.set(message.messageid, message);
-        if (!userList.has(Number(message.userid))) {
-            getUserFromBackend(message.userid)
+    function showSearchResult(datarecive) {
+        const searchUserList = datarecive.data;
+        const displayRole = datarecive.displayRole;
+        console.log(displayRole);
+        let content, templete;
+        if (displayRole === "User") {
+            content = $(document.getElementsByClassName("row content-wrap")[1]);
+            templete = UserSearch;
+        } else {
+            content = $(document.getElementsByClassName("row content-wrap")[3]);
+            templete = GroupSearch;
+        }
+        content.empty();
+        for (const user of searchUserList) {
+            if (!userList.has(Number(user.userid))) {
+                userList.set(user.userid, user);
+            }
+            content.append(
+                $(
+                    templete({
+                        name: user.firstname + " " + user.lastname,
+                        userName: user.username,
+                        userid: user.userid
+                    })
+                )
+            );
         }
     }
-    messageList.set(chats.chatid, messageMap);
-    updateView()
-}
-function showSearchResult(searchUserList, displayRole) {
-    console.log(displayRole);
-    if (displayRole === "User") {
-        content = $(document.getElementsByClassName("row content-wrap")[1]);
-        templete = UserSearch
+
+    function setupUser(datarecive) {
+        const user = datarecive.user;
+        document.getElementById("username").innerHTML = user.username;
+        PrimUser = user;
+        userList.set(PrimUser.userid, PrimUser);
+        sessionStorage.setItem("userid", PrimUser.userid);
+        document.cookie = "userid=" + PrimUser.userid;
+
+        $("#userPic").attr("src", getUserPicture(user));
     }
-    else {
-        content = $(document.getElementsByClassName("row content-wrap")[3]);
-        templete = GroupSearch
+
+    function addUser(datarecive) {
+        userList.set(datarecive.user.userid, datarecive.user);
+        updateChatRooms();
+        updateView();
     }
-    content.empty();
-    for (user of searchUserList) {
-        if (!userList.has(Number(user.userid))) {
-            userList.set(user.userid, user)
+
+    const messageResolvers = new Map(
+        Object.entries({
+            SetupUser: setupUser,
+            ChatRooms: setupChatRooms,
+            UpdateMessage: updateMessage,
+            setupMessageChat: setupMessageChat,
+            AddUser: addUser,
+            searchResult: showSearchResult
+        })
+    );
+
+    function onMessage(evt) {
+        let datarecive = JSON.parse(evt.data);
+        console.log("Websocket got message:" + evt.data);
+
+        if (messageResolvers.has(datarecive.msgType)) {
+            messageResolvers.get(datarecive.msgType)(datarecive);
         }
-        content.append($(templete({
-            name: user.firstname + " " + user.lastname,
-            userName: user.username,
-            userid: user.userid
-        })));
-    }
-}
-
-function setupUser(user) {
-    document.getElementById("username").innerHTML = user.username;
-    PrimUser = user;
-    userList.set(PrimUser.userid, PrimUser);
-    sessionStorage.setItem("userid", PrimUser.userid);
-    document.cookie = "userid=" + PrimUser.userid;
-
-    $('#userPic').attr("src", getUserPicture(user));
-}
-
-function onMessage(evt) {
-    let datarecive = JSON.parse(evt.data);
-    console.log("Websocket got message:" + evt.data);
-    switch (datarecive.msgType) {
-        case
-        "SetupUser":
-            setupUser(datarecive.user);
-            break;
-        case
-        "ChatRooms":
-            setupChatRooms(datarecive.chatSeq);
-            break;
-        case
-        "UpdateMessage":
-            updateMessage(datarecive);
-            break;
-        case
-        "setupMessageChat":
-            setupMessageChat(datarecive.data);
-            break;
-        case
-        "AddUser":
-            userList.set(datarecive.user.userid, datarecive.user);
-            updateChatRooms();
-            updateView();
-            break;
-        case
-        "searchResult":
-            showSearchResult(datarecive.data, datarecive.displayRole);
-            break;
     }
 
-}
+    function doSend(message) {
+        message = JSON.stringify(message);
+        console.log("Sending Message: " + message);
+        websocket.send(message);
+    }
 
-function onError(evt) {
-    console.log(evt)
-    // console('<span style="color: red;">ERROR:</span> ' + evt.data);
-}
-
-function doSend(message) {
-    message = JSON.stringify(message);
-    console.log("Sending Message: " + message);
-    websocket.send(message);
-}
+    $(document).ready(function () {
+        websocket = new WebSocket(wsUri);
+        initWebSocket();
+        addListeners();
+    });
+})();
