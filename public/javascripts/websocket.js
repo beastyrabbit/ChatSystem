@@ -1,9 +1,9 @@
-var currentLocation = window.location;
+const currentLocation = window.location;
 let wsUri = "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
-let websocket
+let websocket;
 let activChat = undefined;
-let PrimUser
-let messageList = new Map() // (chatid,new Map())
+let PrimUser;
+let messageList = new Map(); // (chatid,new Map())
 let userList = new Map();
 let ChatRoomArray = undefined;
 
@@ -67,35 +67,36 @@ const MessageEx = ({name, message, time, img, userid}) => `
 </div>
 `;
 
-$(document)
+$(document);
 $(document).ready(function () {
     websocket = new WebSocket(wsUri);
     initWebSocket();
     addButtons();
-    /! * Slide MembersInfo * ! /
+    /! * Slide MembersInfo * ! /;
     $('.info-btn').on('click', function () {
         $("#Messages").toggleClass('col-sm-12 col-sm-9');
     });
-    /!* Send Button *!/
+    /!* Send Button *!/;
     $('#send-button').on('click', function () {
-        let textArea = $("#inputArea")
+        let textArea = $("#inputArea");
         let message = {
             "type": "message", "text": textArea.val().toString(),
             "chatid": activChat.toString(),
             "timestamp": new Date().getTime()
-        }
-        doSend(message)
+        };
+        doSend(message);
         textArea.val('')
     });
+
     $("#inputArea").on("keydown", function (e) {
-        if (e.keyCode == 13) {
-            $('#send-button').click()
-            $(this).val('')
+        if (e.keyCode === 13) {
+            $('#send-button').click();
+            $(this).val('');
             e.preventDefault();
         }
     });
     $('.searchbar').on("keyup", function (e) {
-        if (e.keyCode == 13) $(this).val('')
+        if (e.keyCode === 13) $(this).val('');
         let attRole = this.getAttribute('role');
         getSearchedUserFromBackend($(this), attRole)
     });
@@ -106,51 +107,49 @@ function sendBackendAddNewUserToGroup(userid) {
         "type": "NewUserToGroup",
         "chatid": activChat,
         "userid": userid
-    }
+    };
     doSend(message)
 }
 
-function getNewChatfromBackend(userid) {
+function getNewChatFromBackend(userid) {
     message = {
         "type": "addNewChat",
         "userid": userid
-    }
+    };
     doSend(message)
 }
 function addButtons() {
-    /! * Chat Select Button * ! /
-    $(document).on("click", ".ChatButton", function (e) {
+    /! * Chat Select Button * ! /;
+    $(document).on("click", ".ChatButton", function () {
         activChat = this.getAttribute("chatid");
         updateView()
     });
-    ;
-    $(document).on("click", ".UserButton", function (e) {
-        userid = this.getAttribute("userid")
-        updateChatRooms()
-        getNewChatfromBackend(userid)
-        $('.searchbar').val('')
+    $(document).on("click", ".UserButton", function () {
+        userid = this.getAttribute("userid");
+        updateChatRooms();
+        getNewChatFromBackend(userid);
+        $('.searchbar').val('');
         updateView()
     });
-    $(document).on("click", "#trash", function (e) {
+    $(document).on("click", "#trash", function () {
         sendBackendRemoveChat()
     });
-    ;
-    $(document).on("click", ".GroupButton", function (e) {
-        userid = this.getAttribute("userid")
-        sendBackendAddNewUserToGroup(userid)
-        $('.searchbar').val('')
+    $(document).on("click", ".GroupButton", function () {
+        userid = this.getAttribute("userid");
+        sendBackendAddNewUserToGroup(userid);
+        $('.searchbar').val('');
         updateView()
     });
 }
 
 function getSearchedUserFromBackend(thissearchbar, attRole) {
-    searchtext = thissearchbar.val()
+    searchtext = thissearchbar.val();
     if (searchtext) {
         message = {
-            "type": "searchrequest",
+            "type": "searchRequest",
             "searchtext": searchtext,
             "displayRole": attRole
-        }
+        };
         doSend(message)
     } else {
         updateChatRooms()
@@ -159,15 +158,15 @@ function getSearchedUserFromBackend(thissearchbar, attRole) {
 
 function sendBackendRemoveChat() {
     message = {
-        "type": "removechat",
+        "type": "removeChat",
         "chatid": activChat.toString()
-    }
-    doSend(message)
+    };
+    doSend(message);
     activChat = undefined
 }
 
 function initWebSocket() {
-    console.log("My Websocket")
+    console.log("My Websocket");
     websocket.onopen = function (evt) {
         onOpen(evt)
     };
@@ -183,24 +182,24 @@ function initWebSocket() {
 }
 
 function onOpen(evt) {
-    console.log(evt)
+    console.log(evt);
     console.log("CONNECTED");
 }
 
 function onClose(evt) {
-    console.log(evt)
+    console.log(evt);
     console.log("DISCONNECTED");
 }
 
 function updateConvInfo() {
-    content = $(document.getElementsByClassName("row content-wrap")[3])
-    content.empty()
-    if (!(activChat == null)) {
-        chatRoomArray = ChatRoomArray
+    content = $(document.getElementsByClassName("row content-wrap")[3]);
+    content.empty();
+    if (!(activChat === null)) {
+        chatRoomArray = ChatRoomArray;
         for (chatRoom of chatRoomArray) {
-            if (chatRoom.chatid == activChat) {
-                user = getUser(chatRoom.userid)
-                var name
+            if (chatRoom.chatid === activChat) {
+                user = getUser(chatRoom.userid);
+                var name;
                 if (user.nickname) {
                     name = user.nickname
                 } else {
@@ -222,9 +221,9 @@ function updateConvInfo() {
 }
 function updateTitle() {
     let content = $('#convTitle');
-    if (ChatRoomArray != null && activChat != null && userList != null) {
+    if (ChatRoomArray !== null && activChat !== null && userList !== null) {
         for (chatroom of ChatRoomArray) {
-            if (chatroom.chatid == activChat) {
+            if (chatroom.chatid === activChat) {
                 content[0].innerText = ('Conversation with ' + chatroom.name)
             }
         }
@@ -232,26 +231,26 @@ function updateTitle() {
 }
 function highLightActivChat() {
     let oldActivChat = document.getElementsByClassName("activchat");
-    if (oldActivChat.length != 0) {
+    if (oldActivChat.length !== 0) {
         oldActivChat[0].classList.remove("activchat");
     }
     let newActivChat = document.querySelector('[chatid="' + activChat + '"]');
-    if (newActivChat != null) {
+    if (newActivChat !== null) {
         newActivChat.classList.add("activchat")
     }
 }
 let updateView = function () {
-    updateTitle()
-    highLightActivChat()
-    setMessagesForChat(activChat)
-    updateConvInfo()
-    MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0]
+    updateTitle();
+    highLightActivChat();
+    setMessagesForChat(activChat);
+    updateConvInfo();
+    MessageScreen = $(document.getElementsByClassName("row content-wrap messages"))[0];
     MessageScreen.scrollTop = MessageScreen.scrollHeight
-}
+};
 
 function appendChatRooms(chatRoom, addedChats) {
-    var user = getUser(chatRoom.userid)
-    if (chatRoom.name == "" || chatRoom.name == "DummyNick") {
+    const user = getUser(chatRoom.userid);
+    if (chatRoom.name === "" || chatRoom.name === "DummyNick") {
         if (user.nickname) {
             chatRoom.name = user.nickname
         } else {
@@ -259,7 +258,7 @@ function appendChatRooms(chatRoom, addedChats) {
         }
     }
     if (!(addedChats.find(x => x === chatRoom.chatid))) {
-        addedChats.push(chatRoom.chatid)
+        addedChats.push(chatRoom.chatid);
         content.append($(ChatName({
             name: chatRoom.name,
             chatid: chatRoom.chatid,
@@ -269,30 +268,30 @@ function appendChatRooms(chatRoom, addedChats) {
     return addedChats
 }
 function setupChatRooms(chatRoomArray) {
-    content = $(document.getElementsByClassName("row content-wrap")[1])
-    content.empty()
-    var addedChats = []
-    if (chatRoomArray.length != 0) {
-        ChatRoomArray = chatRoomArray
+    content = $(document.getElementsByClassName("row content-wrap")[1]);
+    content.empty();
+    let addedChats = [];
+    if (chatRoomArray.length !== 0) {
+        ChatRoomArray = chatRoomArray;
         for (chatRoom of chatRoomArray) {
             addedChats = appendChatRooms(chatRoom, addedChats);
         }
-        if (activChat == null) {
+        if (activChat === null) {
             activChat = chatRoomArray[0].chatid
         }
     }
     updateView()
 }
 function updateChatRooms() {
-    if (ChatRoomArray != null) {
-        chatRoomArray = ChatRoomArray
-        content = $(document.getElementsByClassName("row content-wrap")[1])
-        content.empty()
-        var addedChats = []
+    if (ChatRoomArray !== null) {
+        chatRoomArray = ChatRoomArray;
+        content = $(document.getElementsByClassName("row content-wrap")[1]);
+        content.empty();
+        let addedChats = [];
         for (chatRoom of chatRoomArray) {
             addedChats = appendChatRooms(chatRoom, addedChats);
         }
-        if (activChat == null) {
+        if (activChat === null) {
             activChat = chatRoomArray[0].chatid
         }
     }
@@ -307,22 +306,22 @@ function getUserPicture(user) {
     }
 }
 function setMessagesForChat(chatid) {
-    content = $(document.getElementsByClassName("row content-wrap messages"))
-    content.empty()
-    if (chatid != null) {
+    content = $(document.getElementsByClassName("row content-wrap messages"));
+    content.empty();
+    if (chatid !== null) {
         if (messageList.has(Number(chatid))) {
-            messages = messageList.get(Number(chatid))
+            messages = messageList.get(Number(chatid));
             for (message of messages.values()) {
-                user = getUser(message.userid)
-                messageContent = $('.chattextmessage:last')
-                olduserid = messageContent.data('userid')
-                if (olduserid == user.userid) {
+                user = getUser(message.userid);
+                messageContent = $('.chattextmessage:last');
+                olduserid = messageContent.data('userid');
+                if (olduserid === user.userid) {
                     $('.chattextmessage:last span').append($(TextMessage({
                             text: message.messageText
                         }
                     )))
                 } else {
-                    if (PrimUser.userid == user.userid) {
+                    if (PrimUser.userid === user.userid) {
                         content.append($(MessageIn({
                             message: TextMessage({text: message.messageText}),
                             time: new Date(message.messageTime).toLocaleString(),
@@ -350,12 +349,11 @@ function getUser(userid) {
     if (userList.has(Number(userid))) {
         return userList.get(Number(userid))
     } else {
-        getUserfromBackend(userid)
-        let temp = {
+        getUserFromBackend(userid);
+        return temp = {
             username: "Dummy",
             nickname: "DummyNick"
         };
-        return temp
     }
 }
 
@@ -363,20 +361,20 @@ function getMessageforChatRoomfromBackend(chatid) {
     let message = {
         "type": "messageRequest",
         "chatid": chatid.toString(),
-    }
+    };
     doSend(message)
 }
 
 function updateMessage(data) {
     if (messageList.has(Number(data.chatid))) {
-        var message = {
+        const message = {
             "messageid": data.message.messageid,
             "messageText": data.message.messagetext,
             "messageTime": data.message.messagetime,
             "userid": data.user.userid
-        }
-        massages = messageList.get(Number(data.chatid))
-        massages.set(message.messageid, message)
+        };
+        massages = messageList.get(Number(data.chatid));
+        massages.set(message.messageid, message);
         if (!userList.has(Number(message.userid))) {
             userList.set(data.user.userid, data.user)
         }
@@ -386,12 +384,16 @@ function updateMessage(data) {
     }
 
 }
-function getUserfromBackend(userid) {
+/**
+ *
+ * @param userid
+ */
+function getUserFromBackend(userid) {
     let message = {
         "type": "UserRequest",
         "userid": userid.toString(),
-    }
-    doSend(message)
+    };
+    doSend(message);
     let temp = {
         username: "Dummy",
         nickname: "DummyNick"
@@ -401,33 +403,33 @@ function getUserfromBackend(userid) {
 
 }
 function setupMessageChat(chats) {
-    var messageMap = new Map()
+    const messageMap = new Map();
     for (chat of chats.messageSeq) {
-        var message = {
+        const message = {
             "messageid": chat.messageid,
             "messageText": chat.messagetext,
             "messageTime": chat.messagetime,
             "userid": chat.userid
-        }
-        messageMap.set(message.messageid, message)
+        };
+        messageMap.set(message.messageid, message);
         if (!userList.has(Number(message.userid))) {
-            getUserfromBackend(message.userid)
+            getUserFromBackend(message.userid)
         }
     }
-    messageList.set(chats.chatid, messageMap)
+    messageList.set(chats.chatid, messageMap);
     updateView()
 }
 function showSearchResult(searchUserList, displayRole) {
-    console.log(displayRole)
-    if (displayRole == "User") {
-        content = $(document.getElementsByClassName("row content-wrap")[1])
+    console.log(displayRole);
+    if (displayRole === "User") {
+        content = $(document.getElementsByClassName("row content-wrap")[1]);
         templete = UserSearch
     }
     else {
-        content = $(document.getElementsByClassName("row content-wrap")[3])
+        content = $(document.getElementsByClassName("row content-wrap")[3]);
         templete = GroupSearch
     }
-    content.empty()
+    content.empty();
     for (user of searchUserList) {
         if (!userList.has(Number(user.userid))) {
             userList.set(user.userid, user)
@@ -441,47 +443,47 @@ function showSearchResult(searchUserList, displayRole) {
 }
 
 function setupUser(user) {
-    document.getElementById("username").innerHTML = user.username
-    PrimUser = user
-    userList.set(PrimUser.userid, PrimUser)
-    sessionStorage.setItem("userid", PrimUser.userid)
-    document.cookie = "userid=" + PrimUser.userid
+    document.getElementById("username").innerHTML = user.username;
+    PrimUser = user;
+    userList.set(PrimUser.userid, PrimUser);
+    sessionStorage.setItem("userid", PrimUser.userid);
+    document.cookie = "userid=" + PrimUser.userid;
 
     $('#userPic').attr("src", getUserPicture(user));
 }
 
 function onMessage(evt) {
-    let datarecive = JSON.parse(evt.data)
-    console.log("Websocket got message:" + evt.data)
+    let datarecive = JSON.parse(evt.data);
+    console.log("Websocket got message:" + evt.data);
     switch (datarecive.msgType) {
         case
         "SetupUser":
-            setupUser(datarecive.user)
+            setupUser(datarecive.user);
             break;
         case
         "ChatRooms":
-            setupChatRooms(datarecive.chatSeq)
+            setupChatRooms(datarecive.chatSeq);
             break;
         case
         "UpdateMessage":
-            updateMessage(datarecive)
+            updateMessage(datarecive);
             break;
         case
         "setupMessageChat":
-            setupMessageChat(datarecive.data)
+            setupMessageChat(datarecive.data);
             break;
         case
         "AddUser":
-            userList.set(datarecive.user.userid, datarecive.user)
-            updateChatRooms()
-            updateView()
+            userList.set(datarecive.user.userid, datarecive.user);
+            updateChatRooms();
+            updateView();
             break;
         case
         "searchResult":
-            showSearchResult(datarecive.data, datarecive.displayRole)
+            showSearchResult(datarecive.data, datarecive.displayRole);
             break;
     }
-    return
+
 }
 
 function onError(evt) {
@@ -490,7 +492,7 @@ function onError(evt) {
 }
 
 function doSend(message) {
-    message = JSON.stringify(message)
-    console.log("Sending Message: " + message)
+    message = JSON.stringify(message);
+    console.log("Sending Message: " + message);
     websocket.send(message);
 }

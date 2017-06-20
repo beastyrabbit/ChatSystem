@@ -2,18 +2,13 @@ package objects
 
 import java.sql.Timestamp
 
-import akka.actor
-import akka.actor.ActorRef
-import akka.serialization.Serialization
 import org.joda.time.DateTime
-import akka.actor.{ActorRef, ActorSystem}
-import akka.serialization._
-import com.typesafe.config.ConfigFactory
 import play.api.libs.json.Json._
 import play.api.libs.json._
 
 /**
   * Created by theer on 02.05.2017.
+  * This Class is used to carry all Data for the User
   */
 case class UserRecord(
                        userid: Option[Int] = None,

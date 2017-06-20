@@ -3,10 +3,10 @@ package objects
 import java.sql.Timestamp
 
 import slick.jdbc.H2Profile.api._
-import slick.lifted.{ForeignKeyQuery, ProvenShape}
 
 /**
   * Created by theer on 05.05.2017.
+  * This Class is needed for Slick to work with the DB
   */
 class Tables {
   val userQuery = TableQuery[User]
@@ -19,6 +19,10 @@ class Tables {
 
 
   class User(tag: Tag) extends Table[UserRecord](tag, "USER") {
+    def * = {
+      (userid.?, username, password, firstname, lastname, email, nickname, lastlogin, picture) <> ((UserRecord.apply _).tupled, UserRecord.unapply)
+    }
+
     def userid = column[Int]("USERID", O.PrimaryKey, O.AutoInc)
 
     def username = column[String]("USERNAME")
@@ -36,36 +40,56 @@ class Tables {
     def lastlogin = column[Option[Timestamp]]("LASTLOGIN")
 
     def picture = column[Option[String]]("PICTURE")
-
-    def * = (userid.?, username, password, firstname, lastname, email, nickname, lastlogin, picture) <> ((UserRecord.apply _).tupled, UserRecord.unapply)
   }
 
 
   class Chat(tag: Tag) extends Table[DBChat](tag, "CHAT") {
+    def * = {
+      (chatid.?, name) <> ((DBChat.apply _).tupled, DBChat.unapply)
+    }
+
     def chatid = column[Int]("CHATID", O.PrimaryKey, O.AutoInc)
 
     def name = column[String]("CHATNAME")
-
-    def * = (chatid.?, name) <> ((DBChat.apply _).tupled, DBChat.unapply)
   }
 
 
   class Timelineentry(tag: Tag) extends Table[(Option[Int], Int, Timestamp, String)](tag, "TIMELINEENTRY") {
-    def timelineid = column[Int]("TIMELINEID", O.PrimaryKey, O.AutoInc)
+    def User = {
+      foreignKey("FKTimelineen399460", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def userid = column[Int]("USERID")
+    def * = {
+      (timelineid.?, userid, deadtime, message)
+    }
+
+    def userid = {
+      column[Int]("USERID")
+    }
+
+    def timelineid = {
+      column[Int]("TIMELINEID", O.PrimaryKey, O.AutoInc)
+    }
 
     def deadtime = column[Timestamp]("DEADTIME")
 
     def message = column[String]("MESSAGE")
-
-    def User = foreignKey("FKTimelineen399460", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-    def * = (timelineid.?, userid, deadtime, message)
   }
 
 
   class History(tag: Tag) extends Table[DBMessage](tag, "HISTORY") {
+    def User = {
+      foreignKey("FKHistory174533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
+
+    def Chat = {
+      foreignKey("FKHistory574831", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
+
+    def * = {
+      (messageid.?, messagetext, chatid, userid, messagetime) <> ((DBMessage.apply _).tupled, DBMessage.unapply)
+    }
+
     def messageid = column[Int]("MESSAGEID", O.PrimaryKey, O.AutoInc)
 
     def messagetext = column[String]("MESSAGETEXT")
@@ -75,66 +99,95 @@ class Tables {
     def userid = column[Int]("USERID")
 
     def messagetime = column[Timestamp]("MESSAGETIME")
-
-    def User = foreignKey("FKHistory174533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-    def Chat = foreignKey("FKHistory574831", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-    def * = (messageid.?, messagetext, chatid, userid, messagetime) <> ((DBMessage.apply _).tupled, DBMessage.unapply)
   }
 
   class Friendrequest(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDREQUEST") {
-    def requestfrom = column[Int]("REQUESTFROM")
+    def Userfrom = {
+      foreignKey("FKFriendrequ359114", requestfrom, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def requestto = column[Int]("REQUESTTO")
+    def requestfrom = {
+      column[Int]("REQUESTFROM")
+    }
 
-    def Userfrom = foreignKey("FKFriendrequ359114", requestfrom, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userto = {
+      foreignKey("FKFriendrequ51650", requestto, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def Userto = foreignKey("FKFriendrequ51650", requestto, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def * = {
+      (requestfrom, requestto)
+    }
 
-    def * = (requestfrom, requestto)
+    def requestto = {
+      column[Int]("REQUESTTO")
+    }
   }
 
   class UsertoChat(tag: Tag) extends Table[(Int, Int)](tag, "USERTOCHAT") {
-    def chatid = column[Int]("CHATID")
+    def UserFK = {
+      foreignKey("FKUsertoChat816378", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def userid = column[Int]("USERID")
+    def userid = {
+      column[Int]("USERID")
+    }
 
-    def UserFK = foreignKey("FKUsertoChat816378", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def ChatFK = {
+      foreignKey("FKUsertoChat816374", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def ChatFK = foreignKey("FKUsertoChat816374", chatid, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def * = {
+      (chatid, userid)
+    }
 
-    def * = (chatid, userid)
+    def chatid = {
+      column[Int]("CHATID")
+    }
   }
 
   class Friends(tag: Tag) extends Table[(Int, Int)](tag, "FRIENDS") {
-    def userid = column[Int]("userid")
-
-    def friendid = column[Int]("friendid")
-
     def Userfrom = foreignKey("FKFriends855472", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
 
-    def Userto = foreignKey("FKFriends880936", friendid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def Userto = {
+      foreignKey("FKFriends880936", friendid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
 
-    def * = (userid, friendid)
+    def * = {
+      (userid, friendid)
+    }
+
+    def friendid = {
+      column[Int]("friendid")
+    }
+
+    def userid = {
+      column[Int]("userid")
+    }
   }
 
 
   class GuiSettings(tag: Tag) extends Table[(Int, Boolean, Boolean, Int)](tag, "GUISETTINGS") {
+    def User = {
+      foreignKey("FKGuiSetting68533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
+
+    def Chat = {
+      foreignKey("FKGuiSetting816374", lastchat, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    }
+
+    def lastchat = {
+      column[Int]("LASTCHAT")
+    }
+
+    def * = {
+      (userid, optionmenu, timeline, lastchat)
+    }
+
     def userid = column[Int]("USERID")
 
     def optionmenu = column[Boolean]("OPTIONMENU", O.Default(true))
 
     def timeline = column[Boolean]("TIMELINE", O.Default(true))
-
-    def lastchat = column[Int]("LASTCHAT")
-
-    def User = foreignKey("FKGuiSetting68533", userid, userQuery)(_.userid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-    def Chat = foreignKey("FKGuiSetting816374", lastchat, chatQuery)(_.chatid, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
-
-
-    def * = (userid, optionmenu, timeline, lastchat)
   }
 
 

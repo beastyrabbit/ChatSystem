@@ -16,6 +16,11 @@ class UserManagerActor extends Actor {
 
   var UserRefList: scala.collection.mutable.Map[Int, Set[(UserRecord, ActorRef)]] = mutable.Map.empty[Int, Set[(UserRecord, ActorRef)]]
 
+  /**
+    * Message Handler for Actor
+    *
+    * @return
+    */
   override def receive: Receive = {
     case addNewUser(user: UserRecord, ref: ActorRef, outref: ActorRef) =>
       checkForNewUser(user, ref, outref)
@@ -25,15 +30,22 @@ class UserManagerActor extends Actor {
       val userSet = UserRefList.getOrElse(user.userid.get, Set())
       UserRefList += (user.userid.get -> (userSet - (user -> ref)))
       if (UserRefList.getOrElse(user.userid.get, Set()).isEmpty) {
-        UserRefList -= (user.userid.get)
+        UserRefList -= user.userid.get
       }
   }
 
 
+  /**
+    * This Methode checks if an User is online and Handles the References
+    *
+    * @param user   that is login in
+    * @param ref    to [[UserActor]]
+    * @param outref to Websocket
+    */
   def checkForNewUser(user: UserRecord, ref: ActorRef, outref: ActorRef): Unit = {
     if (UserRefList.contains(user.userid.get)) {
       Logger.warn("Dublicate Login adding Redirect for User: " + user.username)
-      val userSet: Set[(UserRecord, ActorRef)] = UserRefList.get(user.userid.get).get
+      val userSet: Set[(UserRecord, ActorRef)] = UserRefList(user.userid.get)
       userSet.head._2 ! addWebsocket(outref)
       userSet.head._2 ! sendWebsocketList(ref)
     }

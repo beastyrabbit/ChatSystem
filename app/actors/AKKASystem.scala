@@ -1,26 +1,15 @@
 package actors
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import javax.inject._
-
-import akka.pattern.ask
-import actors.UserManagerActor.addNewUser
-
-import scala.concurrent.duration._
-import akka.actor._
 import javax.inject._
 
 import actors.DatenBankActor.{checkCredentials, saveUser, sendUserData, updateUser}
+import akka.actor.{ActorSystem, _}
+import akka.pattern.ask
 import akka.util.Timeout
-import exceptions.WrongCredentials
 import objects.UserRecord
-import play.api.mvc.{Result, Results}
 
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success}
-import akka.actor.{ActorRef, ActorSystem}
-import akka.serialization._
-import com.typesafe.config.ConfigFactory
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 /**
   * Created by theer on 02.05.2017.
@@ -37,7 +26,7 @@ class AKKASystem(system: ActorSystem) {
 
   def checkCredentialsToAKKA(user: UserRecord): Future[Option[UserRecord]] = {
     val eventualRecord: Future[Option[UserRecord]] = (dataBaseActor ? checkCredentials(user)).mapTo[Option[UserRecord]]
-    return eventualRecord
+    eventualRecord
   }
 
   def registerUser(record: UserRecord) = {
@@ -50,6 +39,6 @@ class AKKASystem(system: ActorSystem) {
 
   def getUser(user: UserRecord): Future[UserRecord] = {
     val future: Future[Any] = dataBaseActor ? sendUserData(user)
-    return future.mapTo[UserRecord]
+    future.mapTo[UserRecord]
   }
 }

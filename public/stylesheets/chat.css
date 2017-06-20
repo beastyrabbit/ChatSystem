@@ -161,14 +161,14 @@ html, body {
 .ownmessage {
     font-size: medium;
     float: initial;
-    padding: 0px;
+    padding: 0;
 
 }
 
 .exmessage {
     font-size: medium;
     float: left;
-    padding: 0px;
+    padding: 0;
     padding-top: 3px;
 }
 
@@ -180,7 +180,7 @@ html, body {
 }
 
 .ownmessage span {
-    padding: 0px;
+    padding: 0;
     border-radius: 8px;
     background: #73AD21;
     display: inline-block;
@@ -213,7 +213,7 @@ html, body {
     color: #00b310;
     font-weight: 700;
     padding-left: 4px;
-    margin: 0px;
+    margin: 0;
 }
 
 /* Message Time */

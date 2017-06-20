@@ -6,6 +6,7 @@ import objects.{DBMessage, UserRecord}
 
 /**
   * Created by theer on 02.05.2017.
+  * This Class has all the Models for FrontEnd (Forms)  and Message Handling
   */
 case class UserData(userName: String, password: String)
 
