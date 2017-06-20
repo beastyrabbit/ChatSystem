@@ -9,6 +9,7 @@ import javax.inject.Inject
 
 import actors.FrontEndInputActor.publishMessage
 import actors.UserActor.setupUserChats
+import actors.UserManagerActor.checkUserBACK
 import akka.actor._
 import objects.{DBChat, DBMessage, Tables, UserRecord}
 import play.api.db.slick.DatabaseConfigProvider
@@ -17,25 +18,79 @@ import slick.jdbc.H2Profile.api._
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import models._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import play.api.libs.json.Json.{fromJson, toJson}
-
 import scala.annotation.tailrec
+import akka.actor._
+import objects.{DBMessage, UserRecord}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import java.sql.Timestamp
 
-class DatenBankActor extends Actor {
+import actors.UserManagerActor.{addNewUser, checkUserBACK}
+import akka.util.Timeout
+import models.ChatMessageElement
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+import akka.actor._
+import objects.{DBMessage, UserRecord}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import java.sql
+import java.sql.Timestamp
+
+import scala.concurrent.duration._
+import akka.util.Timeout
+import akka.pattern.ask
+import akka.pattern.{ask, pipe}
+import actors.DatenBankActor._
+import actors.UserManagerActor.{addNewUser, checkUserBACK}
+import akka.util.Timeout
+import models.ChatMessageElement
+import play.api.Logger
+import play.api.mvc.WebSocket
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+
+class DatenBankActor(system: AKKASystem) extends Actor {
 
   import actors.DatenBankActor._
 
+  implicit val timeout = Timeout(5 seconds)
   val tables = new Tables
   val userDB = tables.userQuery
   val chatDB = tables.chatQuery
   val chattoUserDB = tables.userToChatQuery
   val historyDB = tables.historyQuery
+
+  def addUserToChatImp(chatid: Int, userid: Int): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val insertNewUser = DBIO.seq(chattoUserDB += (chatid, userid))
+    db.run(insertNewUser)
+    val allUserStatment = chattoUserDB.filter(row => row.chatid === chatid)
+    val allUserFuture = db.run(allUserStatment.result)
+    allUserFuture onSuccess {
+      case sql: Seq[(Int, Int)] => {
+        sql.foreach(userTuple => {
+          val user = new UserRecord(userid = Some(userTuple._2))
+          val userFuture: Future[Any] = system.userManagerActor ? checkUserBACK(user)
+          userFuture onSuccess {
+            case Some(userSet: Set[(UserRecord, ActorRef)]) =>
+              system.dataBaseActor ! getChats(user, userSet.head._2)
+            case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+          }
+        })
+      }
+    }
+  }
 
   def receive = {
     case sendUserData(user: UserRecord) =>
@@ -62,6 +117,8 @@ class DatenBankActor extends Actor {
       addChatImp(chatname, user1, user2, sendto, sender())
     case removeUserFromChat(chatid: Int, userRecord: UserRecord) =>
       removeUserFromChatImp(chatid, userRecord, sender())
+    case addUserToChat(chatid, userid) =>
+      addUserToChatImp(chatid, userid)
 
   }
 
@@ -253,7 +310,7 @@ class DatenBankActor extends Actor {
 }
 
 object DatenBankActor {
-  def props(): Props = Props(new DatenBankActor())
+  def props(system: AKKASystem): Props = Props(new DatenBankActor(system: AKKASystem))
 
   case class getChats(user: UserRecord, sendto: ActorRef)
 
@@ -278,5 +335,7 @@ object DatenBankActor {
   case class addChat(chatname: String, user1: UserRecord, user2: UserRecord, sendto: ActorRef)
 
   case class removeUserFromChat(chatid: Int, userRecord: UserRecord)
+
+  case class addUserToChat(chatid: Int, userid: Int)
 
 }

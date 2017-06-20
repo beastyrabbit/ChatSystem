@@ -24,7 +24,7 @@ import play.api.mvc.WebSocket
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class FrontEndInputActor(system: AKKASystem) extends Actor {
   implicit val timeout = Timeout(5 seconds)
@@ -62,6 +62,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
     }
   }
 
+
   def checkType(msg: JsValue, userRecord: UserRecord, webSocket: ActorRef, sendfrom: ActorRef): Unit = {
     val msgType = (msg \ "type").get
     msgType match {
@@ -71,6 +72,9 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("searchrequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").as[String], (msg \ "displayRole").as[String], webSocket)
       case JsString("addNewChat") => setupNewChat((msg \ "userid").as[String].toInt, userRecord, sender())
       case JsString("removechat") => setupRemoveChat(msg, userRecord, sendfrom);
+      case JsString("NewUserToGroup") => {
+        system.dataBaseActor ! addUserToChat((msg \ "chatid").as[String].toInt, (msg \ "userid").as[String].toInt)
+      }
       case JsString("") => ???
       case _ => println("Das kenn ich nicht " + msg)
     }

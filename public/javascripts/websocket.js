@@ -103,7 +103,7 @@ $(document).ready(function () {
 
 function sendBackendAddNewUserToGroup(userid) {
     message = {
-        "type": "ddNewUserToGroup",
+        "type": "NewUserToGroup",
         "chatid": activChat,
         "userid": userid
     }
