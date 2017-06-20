@@ -6,6 +6,7 @@ import actors._
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.util.Timeout
+import com.github.t3hnar.bcrypt._
 import models.{RegisterData, UpdateData, UserData}
 import objects.UserRecord
 import play.api._
@@ -118,7 +119,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       val future: Future[Option[UserRecord]] = AKKASystemRef checkCredentialsToAKKA newUser
       future.map {
         case Some(user) =>
-          if (user.password == loginData.password) {
+          if (loginData.password.isBcrypted(user.password)) {
             Redirect(routes.Application.chat()).withCookies(Cookie("user", newUser.username))
           } else {
             Ok(views.html.login(loginForm.fill(UserData("admin", "admin")), "Damit kannst du dich nicht einloggen"))

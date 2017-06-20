@@ -70,33 +70,6 @@
 </div>
 `;
 
-    function buildAndSendMessage({
-                                     type = "",
-                                     chatid = "",
-                                     userid = "",
-                                     text = "",
-                                     timestamp = "",
-                                     searchtext = "",
-                                     displayRole = "",
-                                     messageid = "",
-                                     messageText = "",
-                                     messageTime = ""
-                                 }) {
-        const message = {
-            type: type.toString(),
-            chatid: chatid.toString(),
-            userid: userid.toString(),
-            text: text.toString(),
-            timestamp: timestamp.toString(),
-            searchtext: searchtext.toString(),
-            displayRole: displayRole.toString(),
-            messageid: messageid.toString(),
-            messageText: messageText.toString(),
-            messageTime: messageTime.toString()
-        };
-        doSend(message);
-    }
-
     function addListeners() {
         /* Chat Select Button */
         $(document).on("click", ".ChatButton", function () {
@@ -106,12 +79,12 @@
         $(document).on("click", ".UserButton", function () {
             const userid = this.getAttribute("userid");
             updateChatRooms();
-            buildAndSendMessage({type: "addNewChat", userid});
+            doSend({type: "addNewChat", userid});
             $(".searchbar").val("");
             updateView();
         });
         $(document).on("click", "#trash", function () {
-            buildAndSendMessage({
+            doSend({
                 type: "removeChat",
                 chatid: activChat
             });
@@ -119,7 +92,7 @@
         });
         $(document).on("click", ".GroupButton", function () {
             const userid = this.getAttribute("userid");
-            buildAndSendMessage({
+            doSend({
                 type: "NewUserToGroup",
                 chatid: activChat,
                 userid
@@ -134,7 +107,7 @@
         /* Send Button */
         $("#send-button").on("click", function () {
             let textArea = $("#inputArea");
-            buildAndSendMessage({
+            doSend({
                 type: "message",
                 text: textArea.val(),
                 chatid: activChat,
@@ -162,7 +135,7 @@
     function getSearchedUserFromBackend(thissearchbar, attRole) {
         const searchtext = thissearchbar.val();
         if (searchtext) {
-            buildAndSendMessage({
+            doSend({
                 type: "searchRequest",
                 searchtext: searchtext,
                 displayRole: attRole
@@ -348,7 +321,7 @@
                     }
                 }
             } else {
-                buildAndSendMessage({
+                doSend({
                     type: "messageRequest",
                     chatid: chatid.toString()
                 });
@@ -386,7 +359,7 @@
             }
             updateView();
         } else {
-            buildAndSendMessage({
+            doSend({
                 type: "messageRequest",
                 chatid: data.chatid
             });
@@ -394,7 +367,7 @@
     }
 
     function getUserFromBackend(userid) {
-        buildAndSendMessage({
+        doSend({
             type: "UserRequest",
             userid: userid
         });
@@ -491,6 +464,9 @@
     }
 
     function doSend(message) {
+        for (const key of Object.keys(message)) {
+            message[key] = message[key].toString();
+        }
         message = JSON.stringify(message);
         console.log("Sending Message: " + message);
         websocket.send(message);

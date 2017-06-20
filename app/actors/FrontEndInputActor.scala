@@ -104,8 +104,8 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
   def NewChatPros(userid: Int, user: UserRecord, sendfrom: ActorRef): Unit = {
     val future = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
     future onComplete {
-      case Success(user: UserRecord) =>
-        system.dataBaseActor ? addChat("", user, user, sendfrom) onComplete {
+      case Success(effecteduser: UserRecord) =>
+        system.dataBaseActor ? addChat("", user, effecteduser, sendfrom) onComplete {
           case Success(_) =>
             val future = system.userManagerActor ? checkUserBACK(user)
             future onSuccess {

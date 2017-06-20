@@ -12,6 +12,7 @@ import actors.UserManagerActor.checkUserBACK
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import com.github.t3hnar.bcrypt._
 import models.{ChatMessageElement, _}
 import objects.{DBChat, DBMessage, Tables, UserRecord}
 import org.joda.time.DateTime
@@ -56,13 +57,13 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     case checkCredentials(userRecord: UserRecord) =>
       sender() ! checkCredentialsImpl(userRecord: UserRecord)
     case saveMessage(userRecord, chatMessageElement, chatid) =>
-      saveMessageImpl(userRecord, chatMessageElement, chatid, sender())
+      addMessageImpl(userRecord, chatMessageElement, chatid, sender())
     case getChats(userRecord, sendto) =>
       sendChatsImp(userRecord, sendto)
     case getMessages(chat, websocket) =>
       getMessagesImpl(chat, websocket)
     case saveUser(userRecord: UserRecord) =>
-      saveUserImp(userRecord)
+      addUserImpl(userRecord)
     case updateUser(userRecord: UserRecord) =>
       updateUserImp(userRecord)
     case searchforUser(search: String, displayRole: String, webSocket: ActorRef) =>
@@ -125,7 +126,6 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param userRecord [[UserRecord]] to Update
     */
   def updateUserImp(userRecord: UserRecord): Unit = {
-    println(userRecord)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val filterStatement = userDB.filter(_.userid === userRecord.userid).map(user => (user.password, user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((userRecord.password, userRecord.firstname, userRecord.lastname, userRecord.email, userRecord.nickname, userRecord.picture))
@@ -167,7 +167,6 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param sendto     an Actor
     */
   def sendChatsImp(userRecord: UserRecord, sendto: ActorRef) = {
-    println(userRecord)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val userid = userRecord.userid.get.toString
@@ -223,7 +222,7 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param chatid             of a Chat
     * @param sendto             an Actor
     */
-  def saveMessageImpl(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto: ActorRef): Unit = {
+  def addMessageImpl(userRecord: UserRecord, chatMessageElement: ChatMessageElement, chatid: Int, sendto: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val insertStatement = historyDB returning historyDB.map(_.messageid) into ((item, messageid) => item.copy(messageid = Some(messageid))
@@ -243,9 +242,10 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     *
     * @param userRecord of an User
     */
-  def saveUserImp(userRecord: UserRecord): Unit = {
+  def addUserImpl(userRecord: UserRecord): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
+    val updateUserRecord = userRecord.copy(password = userRecord.password.bcrypt)
     val insertStatement = DBIO.seq(
       userDB += userRecord)
     db.run(insertStatement)
@@ -316,7 +316,7 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     val future = getUserDataFuture(userRecord)
     future onComplete {
       case Success(user) =>
-        sendto ! user
+        sendto ! user.copy(password = "")
       case Failure(ex) => throw ex
 
     }

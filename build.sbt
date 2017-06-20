@@ -19,7 +19,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "2.1.0",
   "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
   "com.h2database" % "h2" % "1.4.192",
-  "com.typesafe.akka" % "akka-actor_2.11" % "2.5.1"
+  "com.typesafe.akka" % "akka-actor_2.11" % "2.5.1",
+  "com.github.t3hnar" %% "scala-bcrypt" % "3.0"
 )
 
 unmanagedResourceDirectories in Test <+= baseDirectory(_ / "target/web/public/test")
