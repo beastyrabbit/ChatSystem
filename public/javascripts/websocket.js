@@ -70,7 +70,18 @@
 </div>
 `;
 
-    function buildAndSendMessage({type = "", chatid = "", userid = "", text = "", timestamp = "", searchtext = "", displayRole = "", messageid = "", messageText = "", messageTime = ""}) {
+    function buildAndSendMessage({
+                                     type = "",
+                                     chatid = "",
+                                     userid = "",
+                                     text = "",
+                                     timestamp = "",
+                                     searchtext = "",
+                                     displayRole = "",
+                                     messageid = "",
+                                     messageText = "",
+                                     messageTime = ""
+                                 }) {
         const message = {
             type: type.toString(),
             chatid: chatid.toString(),
@@ -81,9 +92,9 @@
             displayRole: displayRole.toString(),
             messageid: messageid.toString(),
             messageText: messageText.toString(),
-            messageTime: messageTime.toString(),
+            messageTime: messageTime.toString()
         };
-        doSend(message)
+        doSend(message);
     }
 
     function addListeners() {
@@ -108,7 +119,11 @@
         });
         $(document).on("click", ".GroupButton", function () {
             const userid = this.getAttribute("userid");
-            buildAndSendMessage({type: "NewUserToGroup", chatid: activChat, userid});
+            buildAndSendMessage({
+                type: "NewUserToGroup",
+                chatid: activChat,
+                userid
+            });
             $(".searchbar").val("");
             updateView();
         });
@@ -151,7 +166,7 @@
                 type: "searchRequest",
                 searchtext: searchtext,
                 displayRole: attRole
-            })
+            });
         } else {
             updateChatRooms();
         }
@@ -354,7 +369,6 @@
     }
 
     function getMessageforChatRoomfromBackend(chatid) {
-
     }
 
     function updateMessage(data) {
@@ -379,10 +393,6 @@
         }
     }
 
-    /**
-     *
-     * @param userid
-     */
     function getUserFromBackend(userid) {
         buildAndSendMessage({
             type: "UserRequest",
