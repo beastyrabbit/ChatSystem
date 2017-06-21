@@ -59,22 +59,32 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     case saveMessage(userRecord, chatMessageElement, chatid) =>
       addMessageImpl(userRecord, chatMessageElement, chatid, sender())
     case getChats(userRecord, sendto) =>
-      sendChatsImp(userRecord, sendto)
+      getChatsImpl(userRecord, sendto)
     case getMessages(chat, websocket) =>
       getMessagesImpl(chat, websocket)
     case saveUser(userRecord: UserRecord) =>
       addUserImpl(userRecord)
     case updateUser(userRecord: UserRecord) =>
-      updateUserImp(userRecord)
+      updateUserImpl(userRecord)
     case searchforUser(search: String, displayRole: String, webSocket: ActorRef) =>
       searchforUserImp(search, displayRole, webSocket)
-    case addChat(chatname: String, initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef) =>
-      addChatImp(chatname, initUser, effectedUser, sendto, sender())
+    case addChat(chatname: Option[String], initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef) =>
+      addChatImpl(chatname.getOrElse(""), initUser, effectedUser, sendto, sender())
     case removeUserFromChat(chatid: Int, userRecord: UserRecord) =>
       removeUserFromChatImpl(chatid, userRecord, sender())
-    case addUserToChat(chatid, userid) =>
-      addUserToChatImpl(chatid, userid)
+    case addUserToChat(chatid, chatname, userid) =>
+      addUserToChatImpl(chatid, chatname, userid)
 
+  }
+
+  private def getChatidfromName(chatid: Option[Int], chatname: Option[String], userid: Int): Unit = {
+    val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+    val db = dbConfig.db
+    val filterStatement = chatDB.filter(row => row.name === chatname.get)
+    val future = db.run(filterStatement.result.head)
+    future onComplete {
+      case Success(sql: DBChat) => addUserToChatImpl(sql.chatid, None, userid)
+    }
   }
 
   /**
@@ -83,26 +93,32 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param chatid of the Chat
     * @param userid of the User
     */
-  def addUserToChatImpl(chatid: Int, userid: Int): Unit = {
+  def addUserToChatImpl(chatid: Option[Int], chatname: Option[String], userid: Int): Unit = {
+    println(chatid + "  " + "xx" + chatname + "xx   " + userid)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
-    val insertStatement = DBIO.seq(chattoUserDB += (chatid, userid))
-    db.run(insertStatement)
-    val filterStatement = chattoUserDB.filter(row => row.chatid === chatid)
-    val future = db.run(filterStatement.result)
-    future onSuccess {
-      case sql: Seq[(Int, Int)] =>
-        sql.foreach(userTuple => {
-          val user = new UserRecord(userid = Some(userTuple._2))
-          val future: Future[Any] = system.userManagerActor ? checkUserBACK(user)
-          future onSuccess {
-            case Some(userSet: Set[(UserRecord, ActorRef)]) =>
-              system.dataBaseActor ! getChats(user, userSet.head._2)
-            case None => Logger.debug("Nutzer: " + user.username + " nicht online")
-          }
-        })
+    if (chatid != None) {
+      val insertStatement = DBIO.seq(chattoUserDB += (chatid.get, userid))
+      db.run(insertStatement)
+      val filterStatement = chattoUserDB.filter(row => row.chatid === chatid)
+      val future = db.run(filterStatement.result)
+      future onSuccess {
+        case sql: Seq[(Int, Int)] =>
+          sql.foreach(userTuple => {
+            val user = new UserRecord(userid = Some(userTuple._2))
+            val future: Future[Any] = system.userManagerActor ? checkUserBACK(user)
+            future onSuccess {
+              case Some(userSet: Set[(UserRecord, ActorRef)]) =>
+                system.dataBaseActor ! getChats(user, userSet.head._2)
+              case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+            }
+          })
+      }
+    } else if (chatname != None) {
+      getChatidfromName(chatid, chatname, userid)
     }
   }
+
 
   /**
     * This Methode removes an User from a given Chat
@@ -125,11 +141,18 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     *
     * @param userRecord [[UserRecord]] to Update
     */
-  def updateUserImp(userRecord: UserRecord): Unit = {
+  def updateUserImpl(userRecord: UserRecord): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
-    val filterStatement = userDB.filter(_.userid === userRecord.userid).map(user => (user.password, user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((userRecord.password, userRecord.firstname, userRecord.lastname, userRecord.email, userRecord.nickname, userRecord.picture))
-    db.run(filterStatement)
+    println(userRecord)
+    if (userRecord.password == "") {
+      val filterStatement = userDB.filter(_.userid === userRecord.userid).map(user => (user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((userRecord.firstname, userRecord.lastname, userRecord.email, userRecord.nickname, userRecord.picture))
+      db.run(filterStatement)
+    } else {
+      val filterStatement = userDB.filter(_.userid === userRecord.userid).map(user => (user.password, user.firstname, user.lastname, user.email, user.nickname, user.picture)).update((userRecord.password.bcrypt, userRecord.firstname, userRecord.lastname, userRecord.email, userRecord.nickname, userRecord.picture))
+      db.run(filterStatement)
+    }
+
   }
 
   /**
@@ -141,7 +164,7 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param sendto       an Actor
     * @param sendfrom     sending Actor to signal done
     */
-  def addChatImp(chatname: String, initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef, sendfrom: ActorRef): Unit = {
+  def addChatImpl(chatname: String, initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef, sendfrom: ActorRef): Unit = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val insertStatement = chatDB returning chatDB.map(_.chatid) into ((item, chatid) => item.copy(chatid = Some(chatid))
@@ -154,7 +177,7 @@ class DatenBankActor(system: AKKASystem) extends Actor {
         val future = db.run(insertStatement)
         future.onSuccess {
           case _ =>
-            sendChatsImp(initUser, sendto)
+            getChatsImpl(initUser, sendto)
             sendfrom ! "done"
         }
     }
@@ -166,7 +189,7 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param userRecord to Search for Chats
     * @param sendto     an Actor
     */
-  def sendChatsImp(userRecord: UserRecord, sendto: ActorRef) = {
+  def getChatsImpl(userRecord: UserRecord, sendto: ActorRef) = {
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     val userid = userRecord.userid.get.toString
@@ -267,15 +290,23 @@ class DatenBankActor(system: AKKASystem) extends Actor {
       case sql: Seq[DBMessage] =>
         val chatMessage = ChatMessages(chatid, sql)
 
-        def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
+        def timestampToDateTime(t: Timestamp): DateTime = {
+          new DateTime(t.getTime)
+        }
 
-        def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
+        def dateTimeToTimestamp(dt: DateTime): Timestamp = {
+          new Timestamp(dt.getMillis)
+        }
 
         implicit val timestampFormat = new Format[Timestamp] {
 
-          def writes(t: Timestamp): JsValue = toJson(timestampToDateTime(t))
+          def writes(t: Timestamp): JsValue = {
+            toJson(timestampToDateTime(t))
+          }
 
-          def reads(json: JsValue): JsResult[Timestamp] = fromJson[DateTime](json).map(dateTimeToTimestamp)
+          def reads(json: JsValue): JsResult[Timestamp] = {
+            fromJson[DateTime](json).map(dateTimeToTimestamp)
+          }
 
         }
 
@@ -382,10 +413,10 @@ object DatenBankActor {
 
   case class searchforUser(search: String, displayRole: String, webSocket: ActorRef)
 
-  case class addChat(chatname: String, initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef)
+  case class addChat(chatname: Option[String], initUser: UserRecord, effectedUser: UserRecord, sendto: ActorRef)
 
   case class removeUserFromChat(chatid: Int, userRecord: UserRecord)
 
-  case class addUserToChat(chatid: Int, userid: Int)
+  case class addUserToChat(chatid: Option[Int], chatname: Option[String], userid: Int)
 
 }

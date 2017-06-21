@@ -59,10 +59,12 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
       case JsString("messageRequest") => system.dataBaseActor ! getMessages((msg \ "chatid").as[String].toInt, webSocket)
       case JsString("UserRequest") => sendUserDate(msg, webSocket)
       case JsString("searchRequest") => system.dataBaseActor ! searchforUser((msg \ "searchtext").as[String], (msg \ "displayRole").as[String], webSocket)
-      case JsString("addNewChat") => NewChatPros((msg \ "userid").as[String].toInt, userRecord, sendfrom)
+      case JsString("addNewChat") => NewChatPros((msg \ "text").asOpt[String], (msg \ "userid").as[String].toInt, userRecord, sendfrom)
       case JsString("removeChat") => RemoveChatPros(msg, userRecord, sendfrom);
       case JsString("NewUserToGroup") =>
-        system.dataBaseActor ! addUserToChat((msg \ "chatid").as[String].toInt, (msg \ "userid").as[String].toInt)
+        system.dataBaseActor ! addUserToChat(Some((msg \ "chatid").as[String].toInt), None, (msg \ "userid").as[String].toInt)
+      case JsString("NewGroupChat") => NewGroupChatPros((msg \ "text").asOpt[String], (msg \ "oldPartner").as[String].toInt, (msg \ "userid").as[String].toInt, (msg \ "chatid").as[String].toInt, userRecord, sendfrom)
+
       case _ => println("Das kenn ich nicht " + msg)
     }
   }
@@ -94,24 +96,47 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
     }
   }
 
+  def NewGroupChatPros(text: Option[String], oldPartner: Int, userid: Int, chatid: Int, userRecord: UserRecord, sendfrom: ActorRef): Unit = {
+    val newUserfuture = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
+    val future = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(oldPartner)))
+    future onComplete {
+      case Success(effecteduser: UserRecord) =>
+        system.dataBaseActor ? addChat(text, userRecord, effecteduser, sendfrom) onComplete {
+          case Success(_) => {
+            val future = system.userManagerActor ? checkUserBACK(userRecord)
+            future onSuccess {
+              case Some(userSet: Set[(UserRecord, ActorRef)]) => {
+                system.dataBaseActor ! getChats(userRecord, userSet.head._2)
+              }
+              case None => Logger.debug("Nutzer: " + userRecord.username + " nicht online")
+            }
+            newUserfuture onComplete {
+              case Success(newUser: UserRecord) => system.dataBaseActor ! addUserToChat(None, text, newUser.userid.get)
+            }
+          }
+        }
+    }
+  }
+
+
   /**
     * This Methode is Processing a send addChat command
     *
-    * @param userid   of adding User
-    * @param user     the User responsible
-    * @param sendfrom [[UserActor]] responsible
+    * @param userid     of adding User
+    * @param userRecord the User responsible
+    * @param sendfrom   [[UserActor]] responsible
     */
-  def NewChatPros(userid: Int, user: UserRecord, sendfrom: ActorRef): Unit = {
+  def NewChatPros(text: Option[String], userid: Int, userRecord: UserRecord, sendfrom: ActorRef): Unit = {
     val future = system.dataBaseActor ? sendUserData(new UserRecord(userid = Some(userid)))
     future onComplete {
       case Success(effecteduser: UserRecord) =>
-        system.dataBaseActor ? addChat("", user, effecteduser, sendfrom) onComplete {
+        system.dataBaseActor ? addChat(text, userRecord, effecteduser, sendfrom) onComplete {
           case Success(_) =>
-            val future = system.userManagerActor ? checkUserBACK(user)
+            val future = system.userManagerActor ? checkUserBACK(userRecord)
             future onSuccess {
               case Some(userSet: Set[(UserRecord, ActorRef)]) =>
-                system.dataBaseActor ! getChats(user, userSet.head._2)
-              case None => Logger.debug("Nutzer: " + user.username + " nicht online")
+                system.dataBaseActor ! getChats(userRecord, userSet.head._2)
+              case None => Logger.debug("Nutzer: " + userRecord.username + " nicht online")
             }
         }
     }
@@ -143,7 +168,9 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
 
 
 object FrontEndInputActor {
-  def props(system: AKKASystem): Props = Props(new FrontEndInputActor(system: AKKASystem))
+  def props(system: AKKASystem): Props = {
+    Props(new FrontEndInputActor(system: AKKASystem))
+  }
 
   case class newMessage(msg: JsValue, userRecord: UserRecord, webSocket: ActorRef)
 

@@ -1,5 +1,6 @@
 (function () {
     "use strict";
+
     const currentLocation = window.location;
     let wsUri =
         "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
@@ -10,8 +11,8 @@
     let userList = new Map();
     let ChatRoomArray;
 
-    const ConvInfo = ({name}) => `
-    <div class="contact">
+    const ConvInfo = ({name, userid}) => `
+    <div class="contact" userid=${userid}>
         <div class="media-body">
             <h5 class="media-heading">${name}</h5>
         </div>
@@ -90,15 +91,11 @@
             });
             activChat = undefined;
         });
+
         $(document).on("click", ".GroupButton", function () {
-            const userid = this.getAttribute("userid");
-            doSend({
-                type: "NewUserToGroup",
-                chatid: activChat,
-                userid
-            });
             $(".searchbar").val("");
             updateView();
+            addUserToChatOrCreateNew.call(this);
         });
         /* Slide MembersInfo */
         $(".info-btn").on("click", function () {
@@ -164,14 +161,16 @@
         if (activChat !== null) {
             const chatRoomArray = ChatRoomArray;
             for (const chatRoom of chatRoomArray) {
-                if (chatRoom.chatid === activChat) {
-                    const user = getUser(chatRoom.userid);
+                if (chatRoom.chatid == activChat) {
+                    console.log("chatroom: " + chatRoom)
+                    const userid = chatRoom.userid;
+                    const user = getUser(userid);
                     const name = user.nickname || user.username;
-                    content.append(ConvInfo({name}));
+                    content.append(ConvInfo({name, userid}));
                 }
             }
             const name = PrimUser.nickname || PrimUser.username;
-            content.append(ConvInfo({name}));
+            content.append(ConvInfo({name, userid: PrimUser.userid}));
         }
     }
 
@@ -243,7 +242,7 @@
             for (const chatRoom of chatRoomArray) {
                 addedChats = appendChatRooms(chatRoom, addedChats);
             }
-            if (activChat === null) {
+            if (activChat == null) {
                 activChat = chatRoomArray[0].chatid;
             }
         }
@@ -339,9 +338,6 @@
                 nickname: "DummyNick"
             };
         }
-    }
-
-    function getMessageforChatRoomfromBackend(chatid) {
     }
 
     function updateMessage(data) {
@@ -477,4 +473,34 @@
         initWebSocket();
         addListeners();
     });
+
+    function addUserToChatOrCreateNew() {
+        updateConvInfo();
+        const content = $(document.getElementsByClassName("row content-wrap")[3])
+        const userid = this.getAttribute("userid");
+        console.log(content[0].childElementCount > 2)
+        if (content[0].childElementCount > 2) {
+            doSend({
+                type: "NewUserToGroup",
+                chatid: activChat,
+                userid
+            });
+        } else {
+            let chatNamePrompt = prompt("Please enter new ChatName", "");
+            if (chatNamePrompt == null || chatNamePrompt == "") {
+                console.log("Prompt exited")
+            } else {
+                const text = chatNamePrompt
+                doSend({
+                    type: "NewGroupChat",
+                    text,
+                    chatid: activChat,
+                    oldPartner: content.children()[0].getAttribute("userid"),
+                    userid
+                });
+            }
+        }
+    };
+
 })();
+

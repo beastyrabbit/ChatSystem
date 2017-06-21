@@ -24,21 +24,21 @@ class AKKASystem(system: ActorSystem) {
   implicit val timeout: Timeout = 5.seconds
   val subscribeChat = new SubscribeChat
 
-  def checkCredentialsToAKKA(user: UserRecord): Future[Option[UserRecord]] = {
-    val eventualRecord: Future[Option[UserRecord]] = (dataBaseActor ? checkCredentials(user)).mapTo[Option[UserRecord]]
+  def checkCredentialsToAKKA(userRecord: UserRecord): Future[Option[UserRecord]] = {
+    val eventualRecord: Future[Option[UserRecord]] = (dataBaseActor ? checkCredentials(userRecord)).mapTo[Option[UserRecord]]
     eventualRecord
   }
 
-  def registerUser(record: UserRecord) = {
-    dataBaseActor ! saveUser(record)
+  def registerUser(userRecord: UserRecord) = {
+    dataBaseActor ! saveUser(userRecord)
   }
 
-  def updateUserData(record: UserRecord) = {
-    dataBaseActor ! updateUser(record)
+  def updateUserData(userRecord: UserRecord) = {
+    dataBaseActor ! updateUser(userRecord)
   }
 
-  def getUser(user: UserRecord): Future[UserRecord] = {
-    val future: Future[Any] = dataBaseActor ? sendUserData(user)
+  def getUser(userRecord: UserRecord): Future[UserRecord] = {
+    val future: Future[Any] = dataBaseActor ? sendUserData(userRecord)
     future.mapTo[UserRecord]
   }
 }

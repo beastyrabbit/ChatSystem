@@ -56,8 +56,8 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       "Nickname" -> optional(text),
       "Email" -> optional(text),
       "Picture" -> optional(text),
-      "Password" -> nonEmptyText,
-      "Confirm" -> nonEmptyText
+      "Password" -> optional(nonEmptyText),
+      "Confirm" -> optional(nonEmptyText)
     )(UpdateData.apply)(UpdateData.unapply)
   )
 
@@ -102,8 +102,8 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
         , nickName = userRecord.nickname
         , email = Some(userRecord.email)
         , picture = userRecord.picture
-        , password = userRecord.password
-        , confirm = userRecord.password
+        , password = None
+        , confirm = None
       )), ""
       ))
     }
@@ -142,6 +142,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
       implicit request =>
         val cookieuserid = request.cookies.get("userid").get.value.toInt
         val regiData = request.body
+        Logger.info("Updating User: " + regiData)
         if (regiData.password == regiData.confirm) {
           Logger.info(" User has been updated Name: " + regiData.Name)
           val nameArrey: Array[String] = regiData.Name.getOrElse("").split(" ").map(_.trim).reverse
@@ -150,7 +151,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
           val lastname = nameArrey.head
           val newUser = new UserRecord(
             userid = Some(cookieuserid),
-            password = regiData.password,
+            password = regiData.password.getOrElse(""),
             firstname = firstname,
             lastname = lastname,
             email = regiData.email.orNull,
@@ -160,7 +161,7 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
           Ok(views.html.chat())
         }
         else {
-          Ok(views.html.updateUser(updateForm.fill(UpdateData(regiData.Name, regiData.nickName, regiData.email, regiData.picture, "", "")), "Passwort stimmt nciht überein"))
+          Ok(views.html.updateUser(updateForm.fill(UpdateData(regiData.Name, regiData.nickName, regiData.email, regiData.picture, None, None)), "Passwort stimmt nciht überein"))
         }
 
     }
@@ -214,7 +215,9 @@ class Application @Inject()(val messagesApi: MessagesApi, implicit val system: A
   /**
     * This Methode is forwarting the Chat
     */
-  def chat() = Action {
-    Ok(views.html.chat())
+  def chat() = {
+    Action {
+      Ok(views.html.chat())
+    }
   }
 }

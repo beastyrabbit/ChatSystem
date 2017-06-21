@@ -25,8 +25,8 @@ case class UpdateData(
                        nickName: Option[String],
                        email: Option[String],
                        picture: Option[String],
-                       password: String,
-                       confirm: String
+                       password: Option[String],
+                       confirm: Option[String]
                      )
 
 case class ChatRooms(chatSeq: Seq[ChatRoomElement], msgType: String = "")
