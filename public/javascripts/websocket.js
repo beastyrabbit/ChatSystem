@@ -162,7 +162,6 @@
             const chatRoomArray = ChatRoomArray;
             for (const chatRoom of chatRoomArray) {
                 if (chatRoom.chatid == activChat) {
-                    console.log("chatroom: " + chatRoom)
                     const userid = chatRoom.userid;
                     const user = getUser(userid);
                     const name = user.nickname || user.username;
@@ -178,8 +177,12 @@
         let content = $("#convTitle");
         if (ChatRoomArray !== null && activChat !== null && userList !== null) {
             for (const chatroom of ChatRoomArray) {
-                if (chatroom.chatid === activChat) {
-                    content[0].innerText = "Conversation with " + chatroom.name;
+                if (chatroom.chatid == activChat) {
+                    if (chatroom.name == getUser(chatroom.userid).username || chatroom.name == getUser(chatroom.userid).nickname) {
+                        content[0].innerText = "You are talking with " + chatroom.name;
+                    } else {
+                        content[0].innerText = "You are talking with GroupChat: " + chatroom.name;
+                    }
                 }
             }
         }
@@ -209,7 +212,7 @@
 
     function appendChatRooms(chatRoom, addedChats) {
         const user = getUser(chatRoom.userid);
-        if (chatRoom.name === "" || chatRoom.name === "DummyNick") {
+        if (chatRoom.name == "" || chatRoom.name == "DummyNick") {
             if (user.nickname) {
                 chatRoom.name = user.nickname;
             } else {
@@ -396,7 +399,6 @@
     function showSearchResult(datarecive) {
         const searchUserList = datarecive.data;
         const displayRole = datarecive.displayRole;
-        console.log(displayRole);
         let content, templete;
         if (displayRole === "User") {
             content = $(document.getElementsByClassName("row content-wrap")[1]);
@@ -478,7 +480,6 @@
         updateConvInfo();
         const content = $(document.getElementsByClassName("row content-wrap")[3])
         const userid = this.getAttribute("userid");
-        console.log(content[0].childElementCount > 2)
         if (content[0].childElementCount > 2) {
             doSend({
                 type: "NewUserToGroup",

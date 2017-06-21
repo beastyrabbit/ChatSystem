@@ -94,7 +94,6 @@ class DatenBankActor(system: AKKASystem) extends Actor {
     * @param userid of the User
     */
   def addUserToChatImpl(chatid: Option[Int], chatname: Option[String], userid: Int): Unit = {
-    println(chatid + "  " + "xx" + chatname + "xx   " + userid)
     val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
     val db = dbConfig.db
     if (chatid != None) {
