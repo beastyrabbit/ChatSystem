@@ -1,6 +1,5 @@
 (function () {
     "use strict";
-
     const currentLocation = window.location;
     let wsUri =
         "ws://" + currentLocation.hostname + ":" + currentLocation.port + "/socket";
@@ -178,10 +177,14 @@
         if (ChatRoomArray !== null && activChat !== null && userList !== null) {
             for (const chatroom of ChatRoomArray) {
                 if (chatroom.chatid == activChat) {
-                    if (chatroom.name == getUser(chatroom.userid).username || chatroom.name == getUser(chatroom.userid).nickname) {
+                    if (
+                        chatroom.name == getUser(chatroom.userid).username ||
+                        chatroom.name == getUser(chatroom.userid).nickname
+                    ) {
                         content[0].innerText = "You are talking with " + chatroom.name;
                     } else {
-                        content[0].innerText = "You are talking with GroupChat: " + chatroom.name;
+                        content[0].innerText =
+                            "You are talking with GroupChat: " + chatroom.name;
                     }
                 }
             }
@@ -478,7 +481,7 @@
 
     function addUserToChatOrCreateNew() {
         updateConvInfo();
-        const content = $(document.getElementsByClassName("row content-wrap")[3])
+        const content = $(document.getElementsByClassName("row content-wrap")[3]);
         const userid = this.getAttribute("userid");
         if (content[0].childElementCount > 2) {
             doSend({
@@ -489,9 +492,9 @@
         } else {
             let chatNamePrompt = prompt("Please enter new ChatName", "");
             if (chatNamePrompt == null || chatNamePrompt == "") {
-                console.log("Prompt exited")
+                console.log("Prompt exited");
             } else {
-                const text = chatNamePrompt
+                const text = chatNamePrompt;
                 doSend({
                     type: "NewGroupChat",
                     text,
@@ -501,7 +504,5 @@
                 });
             }
         }
-    };
-
+    }
 })();
-
