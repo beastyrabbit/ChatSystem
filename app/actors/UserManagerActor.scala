@@ -59,7 +59,9 @@ class UserManagerActor extends Actor {
 
 
 object UserManagerActor {
-  def props = Props[UserManagerActor]
+  def props = {
+    Props[UserManagerActor]
+  }
 
   case class removeUser(removeuser: UserRecord, ref: ActorRef)
 

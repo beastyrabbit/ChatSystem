@@ -74,7 +74,6 @@ class DatenBankActor(system: AKKASystem) extends Actor {
       removeUserFromChatImpl(chatid, userRecord, sender())
     case addUserToChat(chatid, chatname, userid) =>
       addUserToChatImpl(chatid, chatname, userid)
-
   }
 
   private def getChatidfromName(chatid: Option[Int], chatname: Option[String], userid: Int): Unit = {
