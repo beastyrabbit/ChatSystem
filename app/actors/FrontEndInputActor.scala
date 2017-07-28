@@ -76,7 +76,7 @@ class FrontEndInputActor(system: AKKASystem) extends Actor {
     * @param user the User responsible
     */
   def messagePros(msg: JsValue, user: UserRecord) = {
-    val chatMessageElement = new ChatMessageElement(messageid = None, messageText = (msg \ "text").get.as[String], messageTime = new Timestamp((msg \ "timestamp").get.as[Long]), userRecord = user)
+    val chatMessageElement = new ChatMessageElement(messageid = None, messageText = (msg \ "text").get.as[String], messageTime = new Timestamp((msg \ "timestamp").get.as[String].toLong), userRecord = user)
     system.dataBaseActor ! saveMessage(user, chatMessageElement, (msg \ "chatid").get.as[String].toInt)
 
   }
